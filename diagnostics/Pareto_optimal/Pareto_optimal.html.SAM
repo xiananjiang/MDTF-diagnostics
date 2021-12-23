@@ -1,0 +1,37 @@
+<!-- This file is part of the Pareto_optimal module of the MDTF code package (see LICENSE.txt) -->
+
+<IMG SRC="../mdtf_diag_banner.png" border=0 usemap="#logo">
+<p>
+<TITLE> Multi-objective optimization (Pareto-optimal analysis)</TITLE>
+<h3> Multi-objective optimization (Pareto-optimal analysis) for South American Monsoon Precipitation </h3>
+
+This diagnostic metrics demonstrates a multi-objective approach to assess performance of different subset climate models under different objective functions in light of their trade-offs. An example is illustrated to quantify model accuracy in simulating mean precipiation over the California region during boreal winter and associated tropical Pacific SST and mid-latitude zonal wind patterns in a targeting GCM along with multiple CMIP6 model simulations. An algorithm is applied to identify the set of Pareto-optimal model subensembles across these three measures. This approach can be used to determine the best model subset(s) with top performances for desired measurements, for example, for future climate projection studies or large-scale forcing for regional downscaling model simulations. 
+<p>
+<a href="MDTF_Documentation_pareto_optimal.pdf">Full Documentation and Contact Information</a>
+<P>
+<TABLE>
+<TR>
+<TH ALIGH=LEFT><font color=navy>Pareto-optimal diagnoses of South American Monsoon Winter (DJF) Precipitation and associated tropical Atlantic 850hPa zonal wind (U850) and tropical Pacific-Atlantic SST
+<TH ALIGH=LEFT><br>
+  <br>
+  <br>
+  <br>
+  <br>
+<TH ALIGH=LEFT><br>
+  <br>
+  <br>
+  <br>
+  <br>
+<TR>
+<TH ALIGH=LEFT>Spatial patterns of model biases in precipitation, U850, and SST
+<TH ALIGH=CENTER><A HREF=model/spatial_pattern_multi_member_mean_fields.png>plot</A>
+<TR>
+<TH ALIGH=LEFT>Performance for Precip, U850, and SST RMSEs based on the Pareto-optimal front analysis
+<TH ALIGH=CENTER><A HREF=model/pareto_fronts_2d_and_3d.png>plot</A>
+<TR>
+<TH ALIGH=LEFT>Spatial patterns of Precip, U850, and SST in model subsets with minimum RMSEs in the 3D Pareto front
+<TH ALIGH=CENTER><A HREF=model/spatial_patterns_with_minimum_rmse_in_pareto_front.png>plot</A>
+<TR>
+<TR>
+
+</TABLE>

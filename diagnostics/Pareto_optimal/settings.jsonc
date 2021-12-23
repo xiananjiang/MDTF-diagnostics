@@ -1,0 +1,53 @@
+// Diagnostic package for multi-objective analysis of GCM simulations
+//
+// Version 1.2 November 20, 2021.
+// Xianan Jiang (UCLA)
+// PI: David Neelin (UCLA)
+//
+{
+  "settings": {
+    "driver": "Pareto_optimal.py",
+    "long_name": "Multi-objective analysis of GCM simulations for winter precipitation over California and South America",
+    "realm" : "atmos",
+    "description": "Multi-objective analysis of GCM simulations",
+    "runtime_requirements": {
+    "python3": ["numpy", "scipy", "matplotlib", "netCDF4", "numba"]
+    }
+  },
+  "data": {
+    "frequency": "mon"
+  },
+  "dimensions": {
+    "lat": {"standard_name": "latitude"},
+    "lon": {"standard_name": "longitude"},
+    "plev": {
+      "standard_name": "air_pressure",
+      "units": "Pa",
+      "positive": "down",
+      "axis": "Z"
+    },
+    "time": {"standard_name": "time"}
+  },
+  "varlist": {
+    "pr": {
+      "standard_name": "precipitation_flux",
+      "units": "kg m-2 s-1",
+      "dimensions": ["time", "lat", "lon"]
+    },
+    "prw": {
+      "standard_name": "atmosphere_mass_content_of_water_vapor",
+      "units": "kg m-2",
+      "dimensions": ["time", "lat", "lon"]
+    },
+    "tos": {
+      "standard_name": "sea_surface_temperature",
+      "units": "degC",
+      "dimensions": ["time", "lat", "lon"]
+    },
+    "ua": {
+      "standard_name": "eastward_wind",
+      "units": "m s-1",
+      "dimensions": ["time", "plev", "lat", "lon"]
+    }
+  }
+}
