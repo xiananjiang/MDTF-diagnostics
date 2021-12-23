@@ -34,7 +34,6 @@ import cartopy.feature as cfeature
 mp.rcParams.update({'mathtext.default': 'regular'})
 
 # In[2]:
-
 para = numpy.load("pareto_parameters.npy",allow_pickle=True)
 
 degree_sign = para[()]['degree_sign']
@@ -94,7 +93,6 @@ if vlist[1]=='tos':
 if vlist[1]=='prw':
    vlist2='PRW'
 
-# ## use gridspec and custom 3d axis for plotting
 # In[5]:
 save_dir = './'
 save_filename = 'pareto_front_results_k1to5.npy'
@@ -116,7 +114,7 @@ bias_values_subensembles_z = save_dict[()]['bias_values_subensembles_z']
 model_combinations = save_dict[()]['model_combinations']
 pareto_set_sizes_3d = save_dict[()]['pareto_set_sizes_3d']
 
-# In[16]:
+# In[6]:
 pareto_set_collect = pareto_set_collect_3d_list[0]
 set_indices_collect = set_indices_collect_3d_list[0]
 length_pareto=len(pareto_set_collect)
@@ -154,7 +152,6 @@ model_data_hist_x0=data[()]["model_data_hist_x"]
 model_data_hist_y0=data[()]["model_data_hist_y"]
 model_data_hist_z0=data[()]["model_data_hist_z"]
 
-# In[10]:
 # create dictionaries to be used below
 dict_x = {
 'nlat':x_regional_nlat,
@@ -175,15 +172,13 @@ dict_z = {
 'obs_field':obs_field_z
 }
 
-# In[13]:
 # make color map
-minval=0.1 # for inferno:  0.18
-maxval=1.0 # for inferno: 1.0
+minval=0.1 
+maxval=1.0 
 n=256
 full_cmap = mp.get_cmap('gray')
 cmap_partial_z = matplotlib.colors.LinearSegmentedColormap.from_list('trunc({n},{a:.2f},{b:.2f})'.format(n=full_cmap.name, a=minval, b=maxval), full_cmap(numpy.linspace(minval, maxval, n)))
 
-# In[14]:
 # make color map
 minval=0. # for inferno:  0.18
 maxval=0.95 # for inferno: 1.0
@@ -191,7 +186,6 @@ n=256
 full_cmap = mp.get_cmap('gist_earth_r')
 cmap_partial = matplotlib.colors.LinearSegmentedColormap.from_list('trunc({n},{a:.2f},{b:.2f})'.format(n=full_cmap.name, a=minval, b=maxval), full_cmap(numpy.linspace(minval, maxval, n)))
 
-# In[15]:
 # define a function that forces the middle of a colorbar to be at zero, even when asymmetric max/min
 class MidpointNormalize(matplotlib.colors.Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -211,7 +205,6 @@ hatching='..'
 
 fig = mp.figure(figsize=(8,7))
 
-# In[19]:
 # model subset with minimum RMSE in Precip
 print('------minimum RMSE in Precip')
 min_para=10000000.
@@ -228,7 +221,6 @@ for ipmod in range(len(modelcomb)-1):
     models=models+', '+model_names[modelcomb[ipmod+1]]
 print(models)
 
-# In[7]:
 # set up data
 model_data_hist_x = numpy.zeros((npmodels, x_regional_nlat, x_regional_nlon))
 model_data_hist_y = numpy.zeros((npmodels, y_regional_nlat, y_regional_nlon))
@@ -243,7 +235,6 @@ for i in range(npmodels):
     model_data_hist_z[i,:,:] = model_data_hist_z0[modelcomb[i],:,:]
 
 ############################## starting plot ##############################
-############################## one ##############################
 mp.rcParams['axes.linewidth'] = 0.3
 #Precip
 ax = mp.subplot2grid((32,28),(3,0),colspan=9,rowspan=6, projection=ccrs.PlateCarree())
@@ -307,8 +298,6 @@ if vlist[1]=='prw':
    contour_levels = numpy.arange(10,55,3)
 lons,lats = numpy.meshgrid(y_regional_lon_vals, y_regional_lat_vals)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([y_lon_lo_plt, y_lon_hi_plt, y_lat_lo_plt, y_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
@@ -348,8 +337,6 @@ lons,lats = numpy.meshgrid(z_regional_lon_vals, z_regional_lat_vals)
 mmem = numpy.mean(model_data_hist_z,axis=0)
 contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([z_lon_lo_plt, z_lon_hi_plt, z_lat_lo_plt, z_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
@@ -368,7 +355,6 @@ lat_wid=z_lat_hi-z_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(z_lon_lo, z_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# In[20]:
 # Model subset with minimum RMSE in SST
 print('------minimum RMSE in SST')
 min_para=10000000.
@@ -385,7 +371,6 @@ for ipmod in range(len(modelcomb)-1):
     models=models+', '+model_names[modelcomb[ipmod+1]]
 print(models)
 
-# In[7]:
 # set up data
 model_data_hist_x = numpy.zeros((npmodels, x_regional_nlat, x_regional_nlon))
 model_data_hist_y = numpy.zeros((npmodels, y_regional_nlat, y_regional_nlon))
@@ -453,8 +438,6 @@ if vlist[1]=='prw':
    contour_levels = numpy.arange(10,55,3)
 lons,lats = numpy.meshgrid(y_regional_lon_vals, y_regional_lat_vals)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([y_lon_lo_plt, y_lon_hi_plt, y_lat_lo_plt, y_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
@@ -490,8 +473,6 @@ lons,lats = numpy.meshgrid(z_regional_lon_vals, z_regional_lat_vals)
 mmem = numpy.mean(model_data_hist_z,axis=0)
 contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([z_lon_lo_plt, z_lon_hi_plt, z_lat_lo_plt, z_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
@@ -509,7 +490,6 @@ lat_wid=z_lat_hi-z_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(z_lon_lo, z_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# In[21]:
 # Model subset with minimum RMSE in UWIND
 print('Model subset with minimum RMSE in UWIND')
 min_para=10000000.
@@ -526,7 +506,6 @@ for ipmod in range(len(modelcomb)-1):
     models=models+', '+model_names[modelcomb[ipmod+1]]
 print(models)
 
-# In[7]:
 # set up data
 model_data_hist_x = numpy.zeros((npmodels, x_regional_nlat, x_regional_nlon))
 model_data_hist_y = numpy.zeros((npmodels, y_regional_nlat, y_regional_nlon))
@@ -594,8 +573,6 @@ if vlist[1]=='prw':
    contour_levels = numpy.arange(10,55,3)
 lons,lats = numpy.meshgrid(y_regional_lon_vals, y_regional_lat_vals)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([y_lon_lo_plt, y_lon_hi_plt, y_lat_lo_plt, y_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
@@ -632,8 +609,6 @@ lons,lats = numpy.meshgrid(z_regional_lon_vals, z_regional_lat_vals)
 mmem = numpy.mean(model_data_hist_z,axis=0)
 contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([z_lon_lo_plt, z_lon_hi_plt, z_lat_lo_plt, z_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
@@ -657,6 +632,4 @@ ax.text(s='Right column: Same as the left column but for the model subset with m
 ax.text(s='These model subsets corresponding to minimum RMSEs in Precip, ' + vlist2 + ', and U'+str(uwind_level)+' are identified by the 3D Pareto-optimal analysis.',x=-2.54,y=-0.6,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
 
 fig.savefig(os.environ["WK_DIR"]+"/model/PS/"+'spatial_patterns_with_minimum_rmse_in_pareto_front.pdf', transparent=True, bbox_inches='tight', dpi=1200)
-#fig.savefig('spatial_patterns_with_minimum_rmse_in_pareto_front.pdf', transparent=True, bbox_inches='tight', dpi=1200)
 
-mp.show()

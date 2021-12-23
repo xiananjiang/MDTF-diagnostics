@@ -143,7 +143,7 @@ n=256
 full_cmap = mp.get_cmap('gist_earth_r')
 cmap_partial = matplotlib.colors.LinearSegmentedColormap.from_list('trunc({n},{a:.2f},{b:.2f})'.format(n=full_cmap.name, a=minval, b=maxval), full_cmap(numpy.linspace(minval, maxval, n)))
 
-# ## define a function that forces the middle of a colorbar to be at zero, even when asymmetric max/min
+## define a function that forces the middle of a colorbar to be at zero, even when asymmetric max/min
 class MidpointNormalize(matplotlib.colors.Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
         self.midpoint = midpoint
@@ -159,10 +159,8 @@ fontsize=12
 agmt_levels=[6,30]
 hatching='..'
 
-fontsize=12
-
 ############################## one ##############################
-print('one')
+#print('one')
 mp.rcParams['axes.linewidth'] = 0.3
 
 fig = mp.figure(figsize=(8.25,5))
@@ -173,8 +171,6 @@ lons,lats = numpy.meshgrid(x_regional_lon_vals, x_regional_lat_vals)
 contour_levels = numpy.arange(0,10.,0.25)
 if exp_name=='SAM':
     contour_levels = numpy.arange(0,11.,0.3)
-if exp_name=='WIO':
-    contour_levels = numpy.arange(0,12.,0.4)
 if exp_name=='CA':
     ax.add_feature(cfeature.STATES.with_scale('50m'), facecolor='none', edgecolor='grey', linewidths=0.5)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
@@ -185,13 +181,9 @@ cbar.ax.tick_params(labelsize=fontsize*0.4, width=0.3)
 cbar.set_ticks([0,1,2,3,4,5,6,7,8,9,10])
 if exp_name=='SAM':
     cbar.set_ticks([0,2,4,6,8,10,12])
-if exp_name=='WIO':
-    cbar.set_ticks([0,2,4,6,8,10,12])
 cbar.solids.set_edgecolor("face")
 contour_levels = [-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3.0,3.5,4.0]
 if exp_name=='SAM':
-    contour_levels = [-8.,-7.,-6.,-5.,-4.,-3.,-2.,-1.,1.,2.,3.,4.,5.,6.,7.,8.]
-if exp_name=='WIO':
     contour_levels = [-8.,-7.,-6.,-5.,-4.,-3.,-2.,-1.,1.,2.,3.,4.,5.,6.,7.,8.]
 mmem_minus_obs = numpy.mean(model_data_hist_x,axis=0)-obs_field_x
 ax.contour(lons, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3)
@@ -212,8 +204,6 @@ lons,lats = numpy.meshgrid(x_regional_lon_vals, x_regional_lat_vals)
 contour_levels = numpy.arange(0,10.,0.25)
 if exp_name=='SAM':
     contour_levels = numpy.arange(0,11.,0.3)
-if exp_name=='WIO':
-    contour_levels = numpy.arange(0,12.,0.3)
 for i in range(nmods):
       if model_names[i] in [target_model_names]:
           mmem=model_data_hist_x[i,:,:]
@@ -227,13 +217,9 @@ cbar.ax.tick_params(labelsize=fontsize*0.4, width=0.3)
 cbar.set_ticks([0,1,2,3,4,5,6,7,8,9,10])
 if exp_name=='SAM':
     cbar.set_ticks([0,2,4,6,8,10,12])
-if exp_name=='WIO':
-    cbar.set_ticks([0,2,4,6,8,10,12])
 cbar.solids.set_edgecolor("face")
 contour_levels = [-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0.5,1,1.5,2,2.5,3.0,3.5,4.0]
 if exp_name=='SAM':
-    contour_levels = [-8.,-7.,-6.,-5.,-4.,-3.,-2.,-1.,1.,2.,3.,4.,5.,6.,7.,8.]
-if exp_name=='WIO':
     contour_levels = [-8.,-7.,-6.,-5.,-4.,-3.,-2.,-1.,1.,2.,3.,4.,5.,6.,7.,8.]
 mmem_minus_obs = mmem-obs_field_x
 ax.contour(lons, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3)
@@ -259,8 +245,6 @@ if vlist[1]=='tos':
 if vlist[1]=='prw':
     contour_levels = numpy.arange(10,55,3)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([y_lon_lo_plt, y_lon_hi_plt, y_lat_lo_plt, y_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.7)
@@ -305,8 +289,6 @@ if vlist[1]=='tos':
 if vlist[1]=='prw':
     contour_levels = numpy.arange(10,55,3)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([y_lon_lo_plt, y_lon_hi_plt, y_lat_lo_plt, y_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.7)
@@ -339,8 +321,6 @@ mmem = obs_field_z
 mmem[numpy.abs(mmem)>100]=numpy.nan
 contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([z_lon_lo_plt, z_lon_hi_plt, z_lat_lo_plt, z_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.7)
@@ -373,8 +353,6 @@ for i in range(nmods):
 mmem[numpy.abs(mmem)>100]=numpy.nan
 contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-#ax.add_feature(cfeature.LAND, facecolor='gray', edgecolor='gray', linewidths=0.6)
-#ax.set_extent([z_lon_lo_plt, z_lon_hi_plt, z_lat_lo_plt, z_lat_hi_plt], ccrs.PlateCarree())
 lons1=lons-clon
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.7)
@@ -389,7 +367,6 @@ for c in cs.collections:
 
 ax.text(s='All fields are for boreal winter or austral summer seasonal mean (Dec-Jan).',x=-1.50,y=-0.15,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.35)
 if vlist[1]=='tos':
-#  ax.text(s='Contours (zero-lines omitted) with intervals of '+str("{:.1f}".format(cintvl_x))+' mm day$^{-1}$ for Precip, 0.5'+degree_sign+'C for SST, and '+ str("{:.1f}".format(uinterval2))+' m s$^{-1}$ for U'+str(uwind_level)+', respectively.',x=-1.50,y=-0.22,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.35)
    ax.text(s='Contours (zero-lines omitted) with intervals of '+str("{:.1f}".format(cintvl_x))+' mm day$^{-1}$ for Precip, '+str("{:.1f}".format(cintvl_y))+degree_sign+'C for SST, and '+ str("{:.1f}".format(cintvl_z))+' m s$^{-1}$ for U'+str(uwind_level)+', respectively.',x=-1.50,y=-0.22,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.35)
 if vlist[1]=='prw':
    ax.text(s='Contours (zero-lines omitted) with intervals of '+str("{:.1f}".format(cintvl_x))+' mm day$^{-1}$ for Precip, '+str("{:.1f}".format(cintvl_y))+' mm for PRW, and '+ str("{:.1f}".format(cintvl_z))+' m s$^{-1}$ for U'+str(uwind_level)+', respectively.',x=-1.50,y=-0.22,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.35)
@@ -397,6 +374,5 @@ ax.text(s='Multi-model simulations are from the CMIP6 project.',x=-1.50,y=-0.29,
 ax.text(s='Rectanglar boxes represent analysis regions for the three values.',x=-1.50,y=-0.36,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.35)
 
 fig.savefig(os.environ["WK_DIR"]+"/model/PS/"+'spatial_pattern_multi_member_mean_fields.pdf', transparent=True, bbox_inches='tight', dpi=1200)
-#fig.savefig('spatial_pattern_multi_member_mean_fields.pdf', transparent=True, bbox_inches='tight', dpi=500)
 
 mp.show()

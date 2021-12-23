@@ -28,13 +28,7 @@ import os
 
 mp.rcParams.update({'mathtext.default': 'regular'})
 
-#from mpl_toolkits import basemap
-#import mpl_toolkits.axes_grid1
-
-#get_ipython().run_line_magic('matplotlib', 'inline')
-
-# In[2]:
-
+# In[1]:
 para = numpy.load("pareto_parameters.npy",allow_pickle=True)
 
 degree_sign = para[()]['degree_sign']
@@ -62,9 +56,8 @@ uwind_level=para[()]["uwind_level"]
 
 nmods = len(model_names)
 
-# ## import preprocessed observational data set climatologies
-# Pre-processing not shown here:
-# * All data sets regridded onto a common 2.5-degree grid (72x144 latxlon)
+## import preprocessed observational data set climatologies.
+## All pre-processed datasets have been regridded onto a common 2.5-degree grid (72x144 latxlon).
 
 data = numpy.load("input_data.npy",allow_pickle=True)
 
@@ -101,7 +94,7 @@ model_data_hist_x=data[()]["model_data_hist_x"][:, x_lat_inds[0]:(x_lat_inds[-1]
 model_data_hist_y=data[()]["model_data_hist_y"][:, y_lat_inds[0]:(y_lat_inds[-1]+1), y_lon_inds[0]:(y_lon_inds[-1]+1)]
 model_data_hist_z=data[()]["model_data_hist_z"][:, z_lat_inds[0]:(z_lat_inds[-1]+1), z_lon_inds[0]:(z_lon_inds[-1]+1)]
 
-# NOW CALCULATE BIAS AND CONVERGENCE
+# Calculate biases
 bias_values_x = numpy.zeros((nmods))
 bias_values_y = numpy.zeros((nmods))
 bias_values_z = numpy.zeros((nmods))
@@ -125,7 +118,6 @@ mmem_bias_x = numpy.sqrt( numpy.mean( (numpy.mean(model_data_hist_x, axis=0) - o
 mmem_bias_y = numpy.sqrt( numpy.mean( (numpy.mean(model_data_hist_y, axis=0) - obs_field_y)**2. ))
 mmem_bias_z = numpy.sqrt( numpy.mean( (numpy.mean(model_data_hist_z, axis=0) - obs_field_z)**2. ))
 
-# In[18]:
 # create dictionaries to be used below
 dict_x = {
 'bias_values_mods':bias_values_x,
@@ -162,22 +154,16 @@ dict_z = {
 
 
 # In[19]:
-
 pareto_set_collect_2d_list = []
 pareto_set_collect_3d_list = []
 set_indices_collect_2d_list = []   #jxa
 set_indices_collect_3d_list = []   #jxa
 
 
-# ## Set up the ```N choose k``` combinations of models
-# The cell below does values from ```k=1``` up to ```k=5```
-# In[20]:
-#k=3
-
+# Set up the 'N choose k' combinations of models with k from 1 upto 'pareto_k_values' (default 3)
 all_combinations = []
 model_numbers = numpy.arange(nmods, dtype=int)
 
-#k_values = [1,2,3]
 k_values = pareto_k_values
 N_ens_count = 0
 for k_idx in range(len(k_values)):
@@ -190,25 +176,14 @@ model_combinations = [numpy.array(item) for sublist in all_combinations for item
 
 
 # ## Set up objective function calculations to be ready for input into Pareto front calculation
-# 
-# These scripts use ```pareto.py```, an [evolutionary algorithm by Woodruff and Herman](https://github.com/matthewjwoodruff/pareto.py).
-# 
-# * ```DATESTRING``` automatically gets the date (Year-Month-Day_Hour:Minute:Second) so that the Pareto front information will be saved with the date attached (to keep track of when successive scripts are run)
-# * The Pareto front is calculated in 2D for each combination in (precip., skin temp., and 200 hPa winds), and then it is done in 3D for all fields together
-# * The variable ```N_pareto_loops``` specifies the number of successive times to run the ```pareto.py``` script
-# 
+# These scripts use `pareto.py`, an [evolutionary algorithm by Woodruff and Herman](https://github.com/matthewjwoodruff/pareto.py).
+# The Pareto front is calculated in 2D for each combination in (e.g., precip, skin temp, and 200hPa winds), then in 3D for all 3 fields together
 # The cell below prepares all subensemble means for input into Pareto front calculation
-
-# In[22]:
-
-
-DATESTRING = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-
-#N_pareto_loops=5
 
 # do N choose k subensembles
 # for each, calculate ensemble mean
 
+# The variable `N_pareto_loops` specifies the number of successive times to run the `pareto.py` script (default 5)
 N_ens = N_ens_count
 
 subensembles_hist_x = numpy.zeros((N_ens, dict_x['nlat'], dict_x['nlon']))
@@ -233,8 +208,7 @@ for i in range(N_ens):
     bias_values_subensembles_y[i] = numpy.sqrt( numpy.mean( (hist_field_y - dict_y['obs_field'])**2.) )
     bias_values_subensembles_z[i] = numpy.sqrt( numpy.mean( (hist_field_z - dict_z['obs_field'])**2.) )
 
-
-#jxa - to output target model
+# Output for the targeting model
 N_ens_count_target=0
 for i in range(N_ens):
     nmodel_comb = model_combinations[i]
@@ -264,9 +238,6 @@ for i in range(N_ens):
           N_ens_count_target += 1
 
 # Calculating Pareto information (which_combo in 2D then 3D last)
-
-# In[26]:
-
 
 for which_combo in [1,2,3]:
     
@@ -309,13 +280,12 @@ for which_combo in [1,2,3]:
 
     pareto_set_collect = numpy.empty((0,2))
     pareto_set_collect = numpy.append(pareto_set_collect, pareto_set, axis=0)
-    set_indices_collect = numpy.empty((0))   #jxa
-    set_indices_collect = numpy.append(set_indices_collect, set_indices) #jxa
+    set_indices_collect = numpy.empty((0))       
+    set_indices_collect = numpy.append(set_indices_collect, set_indices)     
     # and then get rid of them
     col1[set_indices] = 999.
     col2[set_indices] = 999.
 
-#   set_indices_collect = numpy.append(set_indices_collect, set_indices) #jxa
     # EXTRA PARETO FRONTS ARE DONE HERE, AS LONG AS N_pareto_loops>=1
     for loop in range(1,N_pareto_loops):
         print('calculating Pareto front '+str(loop+1))
@@ -323,7 +293,6 @@ for which_combo in [1,2,3]:
 
         pareto_array = numpy.vstack((col1, col2)).T
         numpy.savetxt('data.txt', pareto_array, delimiter=',')
-#       os.system("python3 /work1/jiang/MDTF-diagnostics-3.0-beta.3/diagnostics/Pareto_optimal/pareto.py data.txt --delimiter=',' --output='pareto_output.txt'")
         os.system("python "+os.environ["POD_HOME"]+"/pareto.py data.txt --delimiter=',' --output='pareto_output.txt'")
         pareto_set = numpy.loadtxt('pareto_output.txt', delimiter=',')
 
@@ -333,7 +302,7 @@ for which_combo in [1,2,3]:
         for i in range(pareto_set.shape[0]):
             set_indices[i] = numpy.where( (col1==pareto_set[i,0])&(col2==pareto_set[i,1]) )[0]
         # and then get rid of them
-        set_indices_collect = numpy.append(set_indices_collect, set_indices) #jxa
+        set_indices_collect = numpy.append(set_indices_collect, set_indices)
         col1[set_indices] = 999.
         col2[set_indices] = 999.
 
@@ -341,31 +310,24 @@ for which_combo in [1,2,3]:
         n_optima = pareto_set_collect.shape[0]
     
     pareto_set_collect_2d_list.append(pareto_set_collect)
-    set_indices_collect_2d_list.append(set_indices_collect)  #jxa
+    set_indices_collect_2d_list.append(set_indices_collect)
 
 
 # PARETO CALCULATIONS IN 3D
 print('calculating 3D Pareto front')
 
-#dict_x=dict_x
-#dict_y=dict_y
-#dict_z=dict_z
-
-##########
+##
 # CALCULATING PARETO FRONT INFO
 # FIRST PARETO LOOP IS DONE HERE
 print('calculating first Pareto front for 3D surface')
 pareto_array = numpy.vstack((bias_values_subensembles_x, bias_values_subensembles_y, bias_values_subensembles_z)).T
 numpy.savetxt('data.txt', pareto_array, delimiter=',')
-#os.system("python3 /work1/jiang/MDTF-diagnostics-3.0-beta.3/diagnostics/Pareto_optimal/pareto.py data.txt --delimiter=',' --output='pareto_set.txt'")
 os.system("python "+os.environ["POD_HOME"]+"/pareto.py data.txt --delimiter=',' --output='pareto_set.txt'")
 pareto_set = numpy.loadtxt('pareto_set.txt', delimiter=',')
 
 # collect indices
 set_indices = numpy.zeros(pareto_set.shape[0], dtype=int)
 for i in range(pareto_set.shape[0]):
-    #a = numpy.where( (bias_values_subensembles_x==pareto_set[i,0])&(bias_values_subensembles_y==pareto_set[i,1])&(bias_values_subensembles_z==pareto_set[i,2]) )[0][0]
-    #print(a)
     set_indices[i] = numpy.where( (bias_values_subensembles_x==pareto_set[i,0])&(bias_values_subensembles_y==pareto_set[i,1])&(bias_values_subensembles_z==pareto_set[i,2]) )[0][0]
 
 pareto_set_sizes_3d=[]
@@ -396,7 +358,6 @@ for loop in range(1,N_pareto_loops):
 
     pareto_array = numpy.vstack((col1, col2, col3)).T
     numpy.savetxt('data.txt', pareto_array, delimiter=',')
-#   os.system("python3 /work1/jiang/MDTF-diagnostics-3.0-beta.3/diagnostics/Pareto_optimal/pareto.py data.txt --delimiter=',' --output='pareto_set.txt'")
     os.system("python "+os.environ["POD_HOME"]+"/pareto.py data.txt --delimiter=',' --output='pareto_set.txt'")
     pareto_set = numpy.loadtxt('pareto_set.txt', delimiter=',')
 
@@ -416,47 +377,17 @@ for loop in range(1,N_pareto_loops):
     col3[set_indices] = 999.
     
 pareto_set_collect_3d_list.append(pareto_set_collect)
-set_indices_collect_3d_list.append(set_indices_collect)  #jxa
+set_indices_collect_3d_list.append(set_indices_collect)
 
 
-# # Calculate all biases for LENS
-# In[27]:
-
-k=5
-
-all_combinations_LENS = []
-model_numbers = numpy.arange(40, dtype=int)
-
-k_values = [1,2,3,4,5]
-N_ens_count = 0
-for k_idx in range(len(k_values)):
-    k = k_values[k_idx]
-    model_combinations_tmp = list(itertools.combinations(model_numbers, k))
-    all_combinations_LENS.append(model_combinations_tmp)
-    N_ens_count += len(model_combinations_tmp)
-#print(all_combinations[1])
-model_combinations_LENS = [numpy.array(item) for sublist in all_combinations_LENS for item in sublist]
-
-
-# In[28]:
-
-#dict_x=dict_x
-#dict_y=dict_y
-#dict_z=dict_z
-
-
-# # Save all information
-# In[33]:
-
-
+## Save all information
 save_dict = {}
 
 save_dict['pareto_set_collect_2d_list'] = pareto_set_collect_2d_list
 save_dict['pareto_set_collect_3d_list'] = pareto_set_collect_3d_list
 
-#jxa
 save_dict['set_indices_collect_2d_list'] = set_indices_collect_2d_list
-save_dict['set_indices_collect_3d_list'] = set_indices_collect_3d_list   #jxa
+save_dict['set_indices_collect_3d_list'] = set_indices_collect_3d_list
 
 save_dict['bias_values_subensembles_x'] = bias_values_subensembles_x
 save_dict['bias_values_subensembles_y'] = bias_values_subensembles_y

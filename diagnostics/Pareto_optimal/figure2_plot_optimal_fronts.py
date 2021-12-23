@@ -31,11 +31,6 @@ import matplotlib.patches
 
 mp.rcParams.update({'mathtext.default': 'regular'})
 
-#from mpl_toolkits import basemap
-#import mpl_toolkits.axes_grid1
-
-#get_ipython().run_line_magic('matplotlib', 'inline')
-
 para = numpy.load("pareto_parameters.npy",allow_pickle=True)
 target_model_names=para[()]["target_model_names"]
 degree_sign = para[()]['degree_sign']
@@ -203,7 +198,6 @@ for which_combo in [1,2,3]:
 
     colors = cm.nipy_spectral(numpy.linspace(0.1,1,nmods+1,endpoint=True))
     
-#   ax = mp.subplot2grid((26,20),((which_combo-1)*9+2,0),colspan=6,rowspan=6)
     ax = mp.subplot2grid((28,20),((which_combo-1)*9+2,0),colspan=6,rowspan=6)
 
     title = ax.text(s=fig_titles[which_combo],x=0,y=1.03,fontsize=fontsize,ha='left',va='bottom',transform=ax.transAxes)
@@ -215,7 +209,6 @@ for which_combo in [1,2,3]:
     
     if which_combo==1:
         for i in range(nmods):
-           #clabel='('+"{0:2d}".format(i+1)+','+"{0:2d}".format(bias_sort2[bias_sort[i]])+','+"{0:2d}".format(bias_sort3[bias_sort[i]])+') '
             clabel='('+"{0:2d}".format(ranka[i])+','+"{0:2d}".format(rankb[i])+','+"{0:2d}".format(rankc[i])+') '
             if model_names[bias_sort][i] in [target_model_names]:
                 ax.scatter(dict_x['bias_values_mods'][bias_sort][i], dict_y['bias_values_mods'][bias_sort][i], s=markersize_big/0.5, marker='*', facecolor='None', edgecolor='magenta', label=clabel+model_names[bias_sort][i], linewidth=1, zorder=8, rasterized=False)
@@ -307,8 +300,6 @@ for which_combo in [1,2,3]:
     percent_tmods_pareto_2d[which_combo-1] = percent_tmods_pareto[psort][0]
     psort_2d[which_combo-1] = psort[0]
 
-#   ax.text('this is a test',x=5.4,y=1.03,fontsize=fontsize,ha='left',va='bottom',transform=ax.transAxes)
-
     if which_combo==1:
         handles,labels = ax.get_legend_handles_labels()
 #       labels = labels[:-3]+[labels[-2]]+[labels[-3]]+[labels[-1]]
@@ -339,7 +330,7 @@ set_indices_collect = set_indices_collect_3d_list[0]
 #jxa
 ax = mp.subplot2grid((28,20),(0,9),colspan=11,rowspan=11,projection='3d')
 
-# COLORIZING PARETO FRONT
+#
 min_val = 0.3
 max_val = 0.7
 colors = [ [i/(len(pareto_set_sizes_3d)-1)]*pareto_set_sizes_3d[i] for i in range(len(pareto_set_sizes_3d)) ]
@@ -369,7 +360,7 @@ psort = numpy.argsort(-tmods_pareto)
 
 xlab = ax.set_xlabel(xlabel, fontsize=fontsize, labelpad=-2)
 ylab = ax.set_ylabel(ylabel, fontsize=fontsize, labelpad=-2)
-ax.zaxis.set_rotate_label(False)  # disable automatic rotation
+ax.zaxis.set_rotate_label(False)  
 zlab = ax.set_zlabel(zlabel, fontsize=fontsize, labelpad=-2, rotation=90)
 
 ax.scatter(0,0,0,marker='*',s=150,color='0.25',edgecolor='0')
@@ -439,12 +430,7 @@ ax.zaxis.pane.set_edgecolor('None')
 
 ax.tick_params(labelsize=fontsize-1, pad=0)
 
-#ax.yaxis.set_gridline_color((0, 'black'))
-################################################################################
-################################################################################
-################################################################################
 # create legend #
-#ax_outer_legend = mp.subplot2grid((26,20),(14,9),colspan=11,rowspan=12, frameon=False) #fig.add_subplot(111, frameon=False)
 ax_outer_legend = mp.subplot2grid((32,20),(14,8),colspan=11,rowspan=11, frameon=False) #fig.add_subplot(111, frameon=False)
 ax_outer_legend.axes.get_xaxis().set_visible(False)
 ax_outer_legend.axes.get_yaxis().set_visible(False)
@@ -452,8 +438,6 @@ ax_outer_legend.axes.get_yaxis().set_visible(False)
 handles2,labels2 = ax.get_legend_handles_labels()
 handles+=handles2
 labels+=labels2
-#labels = labels[:-2]+[labels[-1]]+[labels[-2]]
-#handles = handles[:-2]+[handles[-1]]+[handles[-2]]
 title = ax_outer_legend.text(x=0.09, y=1.00, s='Model with rank by (Precip, '+ vlist2 +', U'+str(uwind_level)+')',fontsize=fontsize*0.9,ha='left',color='blue',va='bottom')
 
 N_scatter=15
@@ -476,6 +460,4 @@ title = ax.text(x=-0.19, y=1.28, s='Pareto 3D Set:  All ' + str(n_pareto_sgcm_to
 
 #jxa
 fig.savefig(os.environ["WK_DIR"]+"/model/PS/"+'pareto_fronts_2d_and_3d.pdf', transparent=True, bbox_extra_artists=[xlab,ylab,zlab]+titles_instances+[fig_outer_legend_one,fig_outer_legend_two], dpi=1200)
-#fig.savefig('pareto_fronts_2d_and_3d.pdf', transparent=True, bbox_extra_artists=[xlab,ylab,zlab]+titles_instances+[fig_outer_legend_one,fig_outer_legend_two], dpi=1200)
 
-#mp.show()
