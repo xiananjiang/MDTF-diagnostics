@@ -13,11 +13,10 @@
 import numpy
 import glob
 import os
-#import json
+import subprocess
+import os.path
 
-degree_sign = u'\u00B0'
-
-### create list of model names (alphabetical order)
+## List of model names (alphabetical order)
 
 target_model_names = 'GFDL-CM4'
 
@@ -26,47 +25,71 @@ cmip_model_names = numpy.array(( 'ACCESS-CM2', 'ACCESS-ESM1-5', 'AWI-CM-1-1-MR',
 exp_name='CA'
 #exp_name='SAM'
 
-
 if exp_name=='CA':
-     vlist = numpy.array(( 'pr','tos','ua' ))
+     vlist = numpy.array(( 'pr','tos','ua' )) # this list of variable names, labels, and units needs to be consistent with the "varlist" in the "settings.jsonc" file
+     vlist_label = numpy.array(( 'Precip','SST','U200' ))
+     vlist_unit = numpy.array(( 'mm day$^{\,-1}$',u'\u00B0C','m s$^{-1}$' ))
      uwind_level=200
-### specify the lat/lon bounding regions for the objective function calculations
+     if 'ua' in vlist:
+        file_exists = os.path.exists(os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf.nc")
+        if (file_exists):
+           subprocess.call(['/bin/csh', '-c', "rm "+os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf.nc"])
+        subprocess.call(['/bin/csh', '-c', "ln -s "+os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf_"+exp_name+".nc "+os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf.nc"])
+        subprocess.call(['/bin/csh', '-c', "ls -l "+os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf.nc"])
+        file_exists = os.path.exists(os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf.nc")
+        if (file_exists):
+           subprocess.call(['/bin/csh', '-c', "rm "+os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf.nc"])
+        subprocess.call(['/bin/csh', '-c', "ln -s "+os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf_"+exp_name+".nc "+os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf.nc"])
+        subprocess.call(['/bin/csh', '-c', "ls -l "+os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf.nc"])
+          
+## specify the lat/lon bounding regions for the objective function calculations: x, y, z corresponding to the 1-3 variables in vlist.
      x_lat_lo, x_lat_hi, x_lon_lo, x_lon_hi = 30., 45., 232.5, 248; region = 'CA'
      y_lat_lo, y_lat_hi, y_lon_lo, y_lon_hi = -30., 10., 155., 270.; region = 'tropacific'
-     z_lat_lo, z_lat_hi, z_lon_lo, z_lon_hi = 20., 50., 170., 250.; region = 'midlatpacific'  # for u200
-### specify the lat/lon bounding regions for the plotting the spatial ditribution of each field and model simulations (biases)
+     z_lat_lo, z_lat_hi, z_lon_lo, z_lon_hi = 20., 50., 170., 250.; region = 'midlatpacific'  
+## specify the lat/lon bounding regions for the plotting the spatial ditribution of each field and model simulations (biases)
      x_lat_lo_plt, x_lat_hi_plt, x_lon_lo_plt, x_lon_hi_plt = 25., 65., 190., 270.
      y_lat_lo_plt, y_lat_hi_plt, y_lon_lo_plt, y_lon_hi_plt = -45., 45., 120., 300.
      z_lat_lo_plt, z_lat_hi_plt, z_lon_lo_plt, z_lon_hi_plt = 10., 65., 150., 260.
+
 if exp_name=='SAM':
      vlist = numpy.array(( 'pr','tos','ua' ))
+     vlist_label = numpy.array(( 'Precip','SST','U850' ))
+     vlist_unit = numpy.array(( 'mm day$^{\,-1}$',u'\u00B0C','m s$^{-1}$' ))
      uwind_level=850
-### specify the lat/lon bounding regions for the objective function calculations
+     if 'ua' in vlist:
+        file_exists = os.path.exists(os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf.nc")
+        if (file_exists):
+           subprocess.call(['/bin/csh', '-c', "rm "+os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf.nc"])
+        subprocess.call(['/bin/csh', '-c', "ln -s "+os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf_"+exp_name+".nc "+os.environ["OBS_DATA"]+"/OBS_ua_1980-2010_climatology_djf.nc"])
+        file_exists = os.path.exists(os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf.nc")
+        if (file_exists):
+           subprocess.call(['/bin/csh', '-c', "rm "+os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf.nc"])
+        subprocess.call(['/bin/csh', '-c', "ln -s "+os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf_"+exp_name+".nc "+os.environ["OBS_DATA"]+"/cmip6_models_ua_1980-2010_climatology_djf.nc"])
+          
+## specify the lat/lon bounding regions for the objective function calculations
      x_lat_lo, x_lat_hi, x_lon_lo, x_lon_hi = -15., 0., 285., 310.; region = 'South American monsoon'
-   # y_lat_lo, y_lat_hi, y_lon_lo, y_lon_hi = -10., 10., 160., 270.; region = 'tropacific - Nino3.4'
-     y_lat_lo, y_lat_hi, y_lon_lo, y_lon_hi = -10., 10., 160., 345.; region = 'tropacific - Nino3.4'
-     z_lat_lo, z_lat_hi, z_lon_lo, z_lon_hi = -10.,  5., 296., 345.; region = 'equatorial Atlantic'  # for u850 to avoid missing data
-### specify the lat/lon bounding regions for the plotting the spatial ditribution of each field and model simulations (biases)
+     y_lat_lo, y_lat_hi, y_lon_lo, y_lon_hi = -10., 10., 160., 345.; region = 'tropical pacific and Atlantic SST'
+     z_lat_lo, z_lat_hi, z_lon_lo, z_lon_hi = -10.,  5., 296., 345.; region = 'equatorial Atlantic'  
+## specify the lat/lon bounding regions for the plotting the spatial ditribution of each field and model simulations (biases)
      x_lat_lo_plt, x_lat_hi_plt, x_lon_lo_plt, x_lon_hi_plt = -40., 20., 240., 360.
-  #  y_lat_lo_plt, y_lat_hi_plt, y_lon_lo_plt, y_lon_hi_plt = -45., 45., 120., 300.
      y_lat_lo_plt, y_lat_hi_plt, y_lon_lo_plt, y_lon_hi_plt = -45., 45., 120., 360.
      z_lat_lo_plt, z_lat_hi_plt, z_lon_lo_plt, z_lon_hi_plt = -40., 25., 210., 355.
 
+## define winter season
 season='djf';
 
-pareto_k_values = [1,2,3]
+## define number of model combinations to be included for caculation of pareto_optimal fronts
+## e.g., k=1 reprsents combinations with one model from total N models, k=2 represents all combinations with 2 models from total N models, and so on.
+pareto_k_values = [1,2,3]   # total model combinations with selecting upto 3 models from all total N models
 
-N_pareto_loops=5
-
-# -DO NOT make any changes on the following codes if not necesaary .
-
+## -DO NOT make changes on the following codes if not necesaary .
 para={}
-
-para["degree_sign"]=degree_sign
 
 para["target_model_names"]=target_model_names
 para["cmip_model_names"]=cmip_model_names
 para["vlist"]=vlist
+para["vlist_label"]=vlist_label
+para["vlist_unit"]=vlist_unit
 
 para["x_lat_lo"]=x_lat_lo
 para["y_lat_lo"]=y_lat_lo
@@ -96,7 +119,6 @@ para["z_lon_hi_plt"]=z_lon_hi_plt
 
 para["season"]=season
 para["pareto_k_values"]=pareto_k_values
-para["N_pareto_loops"]=N_pareto_loops
 para["uwind_level"]=uwind_level
 para["exp_name"]=exp_name
 

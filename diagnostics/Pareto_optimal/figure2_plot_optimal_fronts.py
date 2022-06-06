@@ -9,51 +9,27 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
 import numpy
-from netCDF4 import Dataset
 import matplotlib.pyplot as mp
-import matplotlib.colors as mc
 import matplotlib.cm as cm
-import mpl_toolkits.mplot3d
-import matplotlib
-import scipy.ndimage
-import datetime
-
-import itertools
-import random
-import numpy.random
-import scipy.stats
-import os
-
 import matplotlib.patches
+import os
 
 mp.rcParams.update({'mathtext.default': 'regular'})
 
+# Read parameters
 para = numpy.load("pareto_parameters.npy",allow_pickle=True)
 target_model_names=para[()]["target_model_names"]
-degree_sign = para[()]['degree_sign']
 season=para[()]["season"]
 uwind_level=para[()]["uwind_level"]
 exp_name=para[()]["exp_name"]
 vlist=para[()]["vlist"]
+vlist_label=para[()]["vlist_label"]
+vlist_unit=para[()]["vlist_unit"]
 
-# ## use gridspec and custom 3d axis for plotting
-# In[4]:
-
-import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.axis3d import Axis
-import matplotlib.pyplot as plt
-import matplotlib.projections as proj
-from matplotlib.colors import colorConverter
-
-# ## open data
-# Specify ```DATESTRING``` from file you saved from the ```pareto_calculations*.ipynb``` script
-
+# Read results from optimal-front analysis
 save_dir = './'
-save_filename = 'pareto_front_results_k1to5.npy'
+save_filename = 'pareto_front_results.npy'
 
 save_dict = numpy.load(save_dir+save_filename,allow_pickle=True)
 
@@ -78,10 +54,7 @@ col1_orig = numpy.copy(bias_values_subensembles_x)
 col2_orig = numpy.copy(bias_values_subensembles_y)
 col3_orig = numpy.copy(bias_values_subensembles_z)
 
-#
 k = save_dict[()]['k']
-N_pareto_loops = save_dict[()]['N_pareto_loops']
-
 N_ens = save_dict[()]['N_ens']
 N_ens_target = save_dict[()]['N_ens_target']
 
@@ -98,11 +71,54 @@ precip_pareto_rmse_vals = pareto_set_collect_3d_list[0][:,0]
 precip_ALL_rmse_vals = bias_values_subensembles_x
 precip_CMIP5_rmse_vals = dict_x['bias_values_mods']
 
-# In[10]:
-(0.869-0.604)/(2.938-0.619)
+## Paremeters to customize Figure 2.
+if exp_name=='CA':
+    x_lim_2d = (0,2.5)
+    y_lim_2d = (0,2.0)
+    z_lim_2d = (0,11.0)
+
+    x_ticks_2d = [0,1,2]
+    y_ticks_2d = [0,0.5,1,1.5,2]
+    z_ticks_2d = [0,2,4,6,8,10]
+
+    x_lim_3d = (0,2.5)
+    y_lim_3d = (0,2.0)
+    z_lim_3d = (0,8.0)
+
+    x_ticks_3d = [0,0.5,1,1.5,2,2.5]
+    y_ticks_3d = [0,0.5,1,1.5,2]
+    z_ticks_3d = [0,1,2,3,4,5,6,7,8]
+   
+    x_ticklabels_3d = ['','','1','','2','']
+    y_ticklabels_3d = ['','','1','','2']
+    z_ticklabels_3d = ['0','','2','','4','','6','','8']
+
+if exp_name=='SAM':
+    x_lim_2d = (0,8.0)
+    y_lim_2d = (0,2.0)
+    z_lim_2d = (0,5.0)
+
+    x_ticks_2d = [0,2,4,6,8]
+    y_ticks_2d = [0,0.5,1,1.5,2]
+    z_ticks_2d = [0,1,2,3,4,5]
+
+    x_lim_3d = (0,8.0)
+    y_lim_3d = (0,2.0)
+    z_lim_3d = (0,4.0)
+
+    x_ticks_3d = [0,1,2,3,4,5,6,7,8]
+    y_ticks_3d = [0,0.5,1,1.5,2]
+    z_ticks_3d = [0,0.5,1,1.5,2,2.5,3,3.5,4]
+
+    x_ticklabels_3d = ['','','2','','4','','6','','8']
+    y_ticklabels_3d = ['','','1','','2']
+    z_ticklabels_3d = ['0','','1','','2','','3','','4']
+
+x_error = 0.0816906403487*1.96
+y_error = 0.02964993495*1.96
+z_error = 0.264875178502*1.96
 
 # In[16]:
-
 markersize_small = 10
 markersize_verysmall = 3
 markersize_big = 20
@@ -111,56 +127,12 @@ hfont={'fontname':'Helvetica'}
 
 fig = mp.figure(figsize=(5,7))
 
-if vlist[1]=='tos':
-   vlist2='SST'
-if vlist[1]=='prw':
-   vlist2='PRW'
-
-xlabel='Precip RMSE (mm day$^{-1}$)'
-if vlist[1]=='tos':
-    ylabel='SST RMSE ('+degree_sign+'C)'
-if vlist[1]=='prw':
-    ylabel='PRW RMSE (mm)'
-zlabel='U'+str(uwind_level)+' RMSE (m s$^{-1}$)'
+xlabel=vlist_label[0]+' RMSE ('+vlist_unit[0]+' )'
+ylabel=vlist_label[1]+' RMSE ('+vlist_unit[1]+' )'
+zlabel=vlist_label[2]+' RMSE ('+vlist_unit[2]+' )'
 
 fig_titles = ['','(a)','(b)','(c)','(d)']
 titles_instances = []
-
-if uwind_level==200:
-    precip_lim = (0,2.5)
-    if vlist[1]=='tos':
-        sst_lim = (0,2.0)
-        sst_ticks = [0,0.5,1,1.5,2]
-    if vlist[1]=='prw':
-        sst_lim = (0,6.0)
-        sst_ticks = [0,1,2,3,4,5,6]
-    u200_lim = (0,11.0)
-
-    precip_ticks = [0,1,2]
-    sst_ticks = [0,0.5,1,1.5,2]
-    u200_ticks = [0,2,4,6,8,10]
-
-if uwind_level==850:
-    precip_lim = (0,8.0)
-    precip_ticks = [0,2,4,6,8]
-    if vlist[1]=='tos':
-        sst_lim = (0,2.0)
-        sst_ticks = [0,0.5,1,1.5,2]
-    if vlist[1]=='prw':
-        sst_lim = (0,6.0)
-        sst_ticks = [0,1,2,3,4,5,6]
-        precip_lim = (0,6.0)
-        precip_ticks = [0,2,4,6]
-    u200_lim = (0,5.0)
-    u200_ticks = [0,1,2,3,4,5]
-
-pr_error = 0.0816906403487*1.96
-sst_error = 0.02964993495*1.96
-u200_error = 0.264875178502*1.96
-
-# 1 is precip and SSTs
-# 2 is precip and u winds
-# 3 is SSTs and winds
 
 n_pareto_sgcm_tot = numpy.zeros((3))
 n_pareto_sgcm_percent = numpy.zeros((3))
@@ -230,15 +202,15 @@ for which_combo in [1,2,3]:
     # MMEM
     if which_combo==1:
         ax.scatter(dict_x['mmem_bias'], dict_y['mmem_bias'], s=markersize_big/1.5, marker='s', edgecolor='0', facecolor='None', label='CMIP6 ensemble mean', linewidth=1, zorder=7, rasterized=False)
-        ellipse_plot = matplotlib.patches.Ellipse(xy=[0,0], width=2*pr_error, height=2*sst_error, angle=0, facecolor='orange', edgecolor='darkorange', zorder=5)
+        ellipse_plot = matplotlib.patches.Ellipse(xy=[0,0], width=2*x_error, height=2*y_error, angle=0, facecolor='orange', edgecolor='darkorange', zorder=5)
         ax.add_artist(ellipse_plot)
     elif which_combo==2:
         ax.scatter(dict_x['mmem_bias'], dict_z['mmem_bias'], s=markersize_big/1.5, marker='s', edgecolor='0', facecolor='None', label='CMIP6 ensemble mean', linewidth=1, zorder=7, rasterized=False)
-        ellipse_plot = matplotlib.patches.Ellipse(xy=[0,0], width=2*pr_error, height=2*u200_error, angle=0, facecolor='orange', edgecolor='darkorange', zorder=5)
+        ellipse_plot = matplotlib.patches.Ellipse(xy=[0,0], width=2*x_error, height=2*z_error, angle=0, facecolor='orange', edgecolor='darkorange', zorder=5)
         ax.add_artist(ellipse_plot)
     elif which_combo==3:
         ax.scatter(dict_y['mmem_bias'], dict_z['mmem_bias'], s=markersize_big/1.5, marker='s', edgecolor='0', facecolor='None', label='CMIP6 ensemble mean', linewidth=1, zorder=7, rasterized=False)
-        ellipse_plot = matplotlib.patches.Ellipse(xy=[0,0], width=2*sst_error, height=2*u200_error, angle=0, facecolor='orange', edgecolor='darkorange', zorder=5)
+        ellipse_plot = matplotlib.patches.Ellipse(xy=[0,0], width=2*y_error, height=2*z_error, angle=0, facecolor='orange', edgecolor='darkorange', zorder=5)
         ax.add_artist(ellipse_plot)
         
     # Target model SUBENSEMBLES
@@ -254,29 +226,28 @@ for which_combo in [1,2,3]:
         ax.scatter(bias_values_subensembles_x[39:], bias_values_subensembles_y[39:], marker='.', s=markersize_verysmall, edgecolor='0.5', facecolor='0.5', zorder=1, label='CMIP6 subens. ('+str(N_ens)+')', rasterized=True)
         ax.set_xlabel(xlabel, size=fontsize-1, labelpad=-0.1)
         ax.set_ylabel(ylabel, size=fontsize-1, labelpad=-0.1)
-        ax.set_ylim(sst_lim)
-        ax.set_xlim(precip_lim)
-        ax.set_xticks(precip_ticks)
-        ax.set_yticks(sst_ticks)
+        ax.set_ylim(y_lim_2d)
+        ax.set_xlim(x_lim_2d)
+        ax.set_xticks(x_ticks_2d)
+        ax.set_yticks(y_ticks_2d)
     elif which_combo==2:
         ax.scatter(bias_values_subensembles_x[39:], bias_values_subensembles_z[39:], marker='.', s=markersize_verysmall, edgecolor='0.5', facecolor='0.5', zorder=1, label='CMIP6 subens. ('+str(N_ens)+')', rasterized=True)
         ax.set_xlabel(xlabel, size=fontsize-1, labelpad=-0.1)
         ax.set_ylabel(zlabel, size=fontsize-1, labelpad=-0.1)
-        ax.set_ylim(u200_lim)
-        ax.set_xlim(precip_lim)
-        ax.set_xticks(precip_ticks)
-        ax.set_yticks(u200_ticks)
+        ax.set_ylim(z_lim_2d)
+        ax.set_xlim(x_lim_2d)
+        ax.set_xticks(x_ticks_2d)
+        ax.set_yticks(z_ticks_2d)
     elif which_combo==3:
         ax.scatter(bias_values_subensembles_y[39:], bias_values_subensembles_z[39:], marker='.', s=markersize_verysmall, edgecolor='0.5', facecolor='0.5', zorder=1, label='CMIP6 subens. ('+str(N_ens)+')', rasterized=True)
         ax.set_xlabel(ylabel, size=fontsize-1, labelpad=-0.1)
         ax.set_ylabel(zlabel, size=fontsize-1, labelpad=-0.1)
-        ax.set_xlim(sst_lim)
-        ax.set_ylim(u200_lim)
-        ax.set_xticks(sst_ticks)
-        ax.set_yticks(u200_ticks)
+        ax.set_xlim(y_lim_2d)
+        ax.set_ylim(z_lim_2d)
+        ax.set_xticks(y_ticks_2d)
+        ax.set_yticks(z_ticks_2d)
         
     ax.tick_params(direction='out', length=2, labelsize=fontsize-3, pad=0.5)
-
     ax.scatter(pareto_set_collect[:,0], pareto_set_collect[:,1], marker='.', s=markersize_verysmall, edgecolor='firebrick', facecolor='firebrick', zorder=2, label='Pareto-optimal set (2D)', rasterized=True)
 
     n_pareto_sgcm=0
@@ -302,9 +273,6 @@ for which_combo in [1,2,3]:
 
     if which_combo==1:
         handles,labels = ax.get_legend_handles_labels()
-#       labels = labels[:-3]+[labels[-2]]+[labels[-3]]+[labels[-1]]
-#       handles = handles[:-3]+[handles[-2]]+[handles[-3]]+[handles[-1]]
-#jxa
         for i in range(nmods):
             if model_names[bias_sort][i] in [target_model_names]:
                 labels = [labels[i]]+labels[0:i]+labels[i+1:]
@@ -312,22 +280,19 @@ for which_combo in [1,2,3]:
     ax.grid()
     ax.set_axisbelow(True)
         
-#jxa
 ax = mp.subplot2grid((32,20),(26,8),colspan=11,rowspan=4)
 ax.axis('off')
-title = ax.text(x=-0.1, y=0.61, s='Note: The above 3 model ranks are for RMSE of Precip, ' + vlist2 + ', U'+str(uwind_level)+', respectively.',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
+title = ax.text(x=-0.1, y=0.61, s='Note: The above 3 model ranks are for RMSE of '+vlist_label[0]+', '+vlist_label[1]+', '+vlist_label[2]+', respectively.',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
 title = ax.text(x=-0.1, y=0.49, s='With all combinations of N = ' + str(nmods) + ' models up to sub-ensembles of k=3.',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
-title = ax.text(x=-0.1, y=0.37, s='Pareto 2D Set (' + vlist2 + '-Precip):  All ' + str(int(n_pareto_sgcm_tot[0])) + ', '+target_model_names+' ' +  str("{:.1f}".format(n_pareto_sgcm_percent[0])) + '% (#1 ' + model_names[int(psort_2d[0])] + ': '+"{:.1f}".format(percent_tmods_pareto_2d[0])+'%)',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
-title = ax.text(x=0.11, y=0.25, s='(U'+str(uwind_level)+'-Precip): All ' + str(int(n_pareto_sgcm_tot[1])) + ', '+target_model_names+' ' +  str("{:.1f}".format(n_pareto_sgcm_percent[1])) + '% (#1 ' + model_names[int(psort_2d[1])] + ': '+"{:.1f}".format(percent_tmods_pareto_2d[1])+'%)',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
-title = ax.text(x=0.11, y=0.13, s='(U'+str(uwind_level)+'-' + vlist2 + '):    All ' + str(int(n_pareto_sgcm_tot[2])) + ', '+target_model_names+' ' +  str("{:.1f}".format(n_pareto_sgcm_percent[2])) + '% (#1 ' + model_names[int(psort_2d[2])] + ': '+"{:.1f}".format(percent_tmods_pareto_2d[2])+'%)',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
+title = ax.text(x=-0.1, y=0.37, s='Pareto 2D Set (' + vlist_label[1]+'-'+vlist_label[0]+'): All ' + str(int(n_pareto_sgcm_tot[0])) + ', '+target_model_names+' ' +  str("{:.1f}".format(n_pareto_sgcm_percent[0])) + '% (#1 ' + model_names[int(psort_2d[0])] + ': '+"{:.1f}".format(percent_tmods_pareto_2d[0])+'%)',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
+title = ax.text(x=0.11, y=0.25, s='( '+vlist_label[2]+'-'+vlist_label[0]+'): All ' + str(int(n_pareto_sgcm_tot[1])) + ', '+target_model_names+' ' +  str("{:.1f}".format(n_pareto_sgcm_percent[1])) + '% (#1 ' + model_names[int(psort_2d[1])] + ': '+"{:.1f}".format(percent_tmods_pareto_2d[1])+'%)',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
+title = ax.text(x=0.11, y=0.13, s='( '+vlist_label[2]+'-'+vlist_label[1]+'): All ' + str(int(n_pareto_sgcm_tot[2])) + ', '+target_model_names+' ' +  str("{:.1f}".format(n_pareto_sgcm_percent[2])) + '% (#1 ' + model_names[int(psort_2d[2])] + ': '+"{:.1f}".format(percent_tmods_pareto_2d[2])+'%)',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
 
-####################################################################################################
-print('plotting 3D combo')
+##-Plotting 3D combo
 
 pareto_set_collect = pareto_set_collect_3d_list[0]
 set_indices_collect = set_indices_collect_3d_list[0]
 
-#jxa
 ax = mp.subplot2grid((28,20),(0,9),colspan=11,rowspan=11,projection='3d')
 
 #
@@ -366,51 +331,17 @@ zlab = ax.set_zlabel(zlabel, fontsize=fontsize, labelpad=-2, rotation=90)
 ax.scatter(0,0,0,marker='*',s=150,color='0.25',edgecolor='0')
 ax.text(s='0', x=0, y=0, z=-1, fontsize=fontsize, ha='center', va='center')
 
-if uwind_level==200:
-    ax.set_xlim(0,2.5)
-    ax.set_zlim(0,8)
+ax.set_xlim(x_lim_3d)
+ax.set_ylim(y_lim_3d)
+ax.set_zlim(z_lim_3d)
 
-    precip_ticks = [0,0.5,1,1.5,2,2.5]
-    u200_ticks = [0,1,2,3,4,5,6,7,8]
-   
-    precip_ticklabels = ['','','1','','2','']
-    u200_ticklabels = ['0','','2','','4','','6','','8']
+ax.set_xticks(x_ticks_3d)
+ax.set_yticks(y_ticks_3d)
+ax.set_zticks(z_ticks_3d)
 
-    if vlist[1]=='tos':
-        ax.set_ylim(0,2.0)
-        sst_ticks = [0,0.5,1,1.5,2]
-        sst_ticklabels = ['','','1','','2']
-    if vlist[1]=='prw':
-        ax.set_ylim(0,6.0)
-        sst_ticks = [0,1,2,3,4,5,6]
-        sst_ticklabels = ['0','1','2','3','4','5','6']
-
-if uwind_level==850:
-    ax.set_xlim(0,8.0)
-    ax.set_zlim(0,4.0)
-
-    precip_ticks = [0,1,2,3,4,5,6,7,8]
-    u200_ticks = [0,0.5,1,1.5,2,2.5,3,3.5,4]
-
-    precip_ticklabels = ['','','2','','4','','6','','8']
-    u200_ticklabels = ['0','','1','','2','','3','','4']
-
-    if vlist[1]=='tos':
-        ax.set_ylim(0,2.0)
-        sst_ticks = [0,0.5,1,1.5,2]
-        sst_ticklabels = ['','','1','','2']
-    if vlist[1]=='prw':
-        ax.set_ylim(0,6.0)
-        sst_ticks = [0,1,2,3,4,5,6]
-        sst_ticklabels = ['0','1','2','3','4','5','6']
-
-ax.set_xticks(precip_ticks)
-ax.set_yticks(sst_ticks)
-ax.set_zticks(u200_ticks)
-
-ax.set_xticklabels(precip_ticklabels)
-ax.set_yticklabels(sst_ticklabels)
-ax.set_zticklabels(u200_ticklabels)
+ax.set_xticklabels(x_ticklabels_3d)
+ax.set_yticklabels(y_ticklabels_3d)
+ax.set_zticklabels(z_ticklabels_3d)
 
 ax.view_init(10,225) # elevation, azimuthal
 
@@ -438,7 +369,7 @@ ax_outer_legend.axes.get_yaxis().set_visible(False)
 handles2,labels2 = ax.get_legend_handles_labels()
 handles+=handles2
 labels+=labels2
-title = ax_outer_legend.text(x=0.09, y=1.00, s='Model with rank by (Precip, '+ vlist2 +', U'+str(uwind_level)+')',fontsize=fontsize*0.9,ha='left',color='blue',va='bottom')
+title = ax_outer_legend.text(x=0.09, y=1.00, s='Model with rank by ('+vlist_label[0]+', '+vlist_label[1]+', '+vlist_label[2]+')',fontsize=fontsize*0.9,ha='left',color='blue',va='bottom')
 
 N_scatter=15
 offsets=numpy.random.normal(loc=0.5, scale=0.25, size=N_scatter)
@@ -451,13 +382,9 @@ cmap_values = offsets*(max_val-min_val)+min_val
 fig_outer_legend_two.legendHandles[-1].set_color(cmap(cmap_values))
 mp.gca().add_artist(fig_outer_legend_two)
 
-#jxa
 ax = mp.subplot2grid((32,20),(30,9),colspan=11,rowspan=1, frameon=False)
 ax.axis('off')
 title = ax.text(x=-0.19, y=1.28, s='Pareto 3D Set:  All ' + str(n_pareto_sgcm_tot_3d) + ', '+target_model_names+' ' +  str("{:.1f}".format(n_pareto_sgcm_percent_3d)) + '% (#1 ' + model_names[psort][0] + ': '+"{:.1f}".format(percent_tmods_pareto[psort][0])+'%)',fontsize=fontsize*0.55,ha='left',va='bottom',transform=ax.transAxes)
 
-################################################################################
-
-#jxa
 fig.savefig(os.environ["WK_DIR"]+"/model/PS/"+'pareto_fronts_2d_and_3d.pdf', transparent=True, bbox_extra_artists=[xlab,ylab,zlab]+titles_instances+[fig_outer_legend_one,fig_outer_legend_two], dpi=1200)
 

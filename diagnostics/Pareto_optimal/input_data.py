@@ -94,9 +94,8 @@ z_lat = ncfile.variables['lat'][:]
 z_lon = ncfile.variables['lon'][:]
 z_lat_inds = numpy.where((z_lat>=z_lat_lo_plt) & (z_lat<=z_lat_hi_plt))[0]
 z_lon_inds = numpy.where((z_lon>=z_lon_lo_plt) & (z_lon<=z_lon_hi_plt))[0]
-target_lev=numpy.where(ncfile.variables['plev'][:] == uwind_level)[0]  #select the vertical level that matches the specified "uwind_level"
 obs_field_z = numpy.zeros((len(z_lat_inds),len(z_lon_inds)))
-obs_field_z[0:len(z_lat_inds),0:len(z_lon_inds)] = ncfile.variables[vlist[2]][target_lev,z_lat_inds[0]:(z_lat_inds[-1]+1), z_lon_inds[0]:(z_lon_inds[-1]+1)]
+obs_field_z = ncfile.variables[vlist[2]][z_lat_inds[0]:(z_lat_inds[-1]+1), z_lon_inds[0]:(z_lon_inds[-1]+1)]
 z_regional_nlat, z_regional_nlon = obs_field_z.shape
 
 z_regional_lat_vals = z_lat[z_lat_inds[0]:(z_lat_inds[-1]+1)]
@@ -122,8 +121,7 @@ ncfile.close()
 
 # import single pressure-level wind data for the targeting GCM (units: m s-1)
 ncfile = Dataset(os.environ["WK_DIR"]+'/model/netCDF/model_'+vlist[2]+'_climatology_djf.nc', 'r', format='NETCDF4')
-target_lev=numpy.where(ncfile.variables['plev'][:] == uwind_level*100.)[0]  #select the vertical level that matches the specified "uwind_level"
-model_data_hist_z[0,:,:] = ncfile.variables[vlist[2]][target_lev,z_lat_inds[0]:(z_lat_inds[-1]+1), z_lon_inds[0]:(z_lon_inds[-1]+1)]  
+model_data_hist_z[0,:,:] = ncfile.variables[vlist[2]][z_lat_inds[0]:(z_lat_inds[-1]+1), z_lon_inds[0]:(z_lon_inds[-1]+1)]  
 ncfile.close()
 
 for i in range(1,nmods):
@@ -143,9 +141,9 @@ for i in range(1,nmods):
 
 # import preprocessed single pressure-level wind data for cmip6 models (units: m s-1)
     ncfile = Dataset(os.environ["OBS_DATA"]+'/cmip6_models_'+vlist[2]+'_1980-2010_climatology_djf.nc', 'r', format='NETCDF4')
-    target_lev=numpy.where(ncfile.variables['plev'][:] == uwind_level)[0]  #select the vertical level that matches the specified "uwind_level"
-    model_data_hist_z[i:,:,:] = ncfile.variables[vlist[2]][i-1, target_lev, z_lat_inds[0]:(z_lat_inds[-1]+1), z_lon_inds[0]:(z_lon_inds[-1]+1)]
+    model_data_hist_z[i:,:,:] = ncfile.variables[vlist[2]][i-1,z_lat_inds[0]:(z_lat_inds[-1]+1), z_lon_inds[0]:(z_lon_inds[-1]+1)]
     ncfile.close()
+    model_data_hist_z[abs(model_data_hist_z)>100.]=numpy.nan
 
 data={}
 

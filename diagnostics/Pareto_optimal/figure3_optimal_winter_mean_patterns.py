@@ -9,34 +9,19 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
 import numpy
-from netCDF4 import Dataset
+import matplotlib
 import matplotlib.pyplot as mp
 import matplotlib.colors as mc
 import matplotlib.cm as cm
-import mpl_toolkits.mplot3d
-import matplotlib
-import scipy.ndimage
-import datetime
-
-import itertools
-import random
-import numpy.random
-import scipy.stats
-import os
-
 import matplotlib.patches as mpatches
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import os
 
-mp.rcParams.update({'mathtext.default': 'regular'})
-
-# In[2]:
+# Read parameters
 para = numpy.load("pareto_parameters.npy",allow_pickle=True)
-
-degree_sign = para[()]['degree_sign']
 
 x_lat_lo=para[()]["x_lat_lo"]
 y_lat_lo=para[()]["y_lat_lo"]
@@ -67,35 +52,15 @@ z_lon_hi_plt=para[()]["z_lon_hi_plt"]
 season=para[()]["season"]
 
 pareto_k_values=para[()]["pareto_k_values"]
-N_pareto_loops=para[()]["N_pareto_loops"]
 
-uwind_level=para[()]["uwind_level"]
 exp_name=para[()]["exp_name"]
 vlist=para[()]["vlist"]
+vlist=para[()]["vlist"]
+vlist_label=para[()]["vlist_label"]
+vlist_unit=para[()]["vlist_unit"]
 
-if uwind_level==200:
-     umax1=71
-     umin1=5
-     uinterval1=5
-     umax2=9.
-     umin2=-9.
-     uinterval2=1
-if uwind_level==850:
-     umax1=16
-     umin1=-10
-     uinterval1=2
-     umax2=5.
-     umin2=-5.
-     uinterval2=0.5
-
-if vlist[1]=='tos':
-   vlist2='SST'
-if vlist[1]=='prw':
-   vlist2='PRW'
-
-# In[5]:
 save_dir = './'
-save_filename = 'pareto_front_results_k1to5.npy'
+save_filename = 'pareto_front_results.npy'
 save_dict = numpy.load(save_dir+save_filename,allow_pickle=True)
 
 model_names = save_dict[()]['model_names']
@@ -114,7 +79,6 @@ bias_values_subensembles_z = save_dict[()]['bias_values_subensembles_z']
 model_combinations = save_dict[()]['model_combinations']
 pareto_set_sizes_3d = save_dict[()]['pareto_set_sizes_3d']
 
-# In[6]:
 pareto_set_collect = pareto_set_collect_3d_list[0]
 set_indices_collect = set_indices_collect_3d_list[0]
 length_pareto=len(pareto_set_collect)
@@ -172,6 +136,30 @@ dict_z = {
 'obs_field':obs_field_z
 }
 
+## Paremeters to customize Figure 3.
+if exp_name=='CA':
+    contour_levels_xs = numpy.arange(0,12.,0.4)
+    contour_levels_xc = numpy.hstack((numpy.arange(-4.,-0.5,0.5),numpy.arange(0.5,4.0,0.5)))
+    contour_levels_ys = numpy.arange(10,31,1)
+    contour_levels_yc = numpy.hstack((numpy.arange(-1.25,-0.24,0.25),numpy.arange(0.25,1.3,0.25)))
+    contour_levels_zs = numpy.arange(5,71,5)
+    contour_levels_zc = numpy.hstack((numpy.arange(-9.,-1.,1.),numpy.arange(1.,9.,1.)))
+    cbar_ticks_xs=[0,1,2,3,4,5,6,7,8,9,10]
+    plot_states=1
+    clon_y=180.
+    clon_z=180.
+if exp_name=='SAM':
+    contour_levels_xs = numpy.arange(0,11.,0.3)
+    contour_levels_xc = numpy.hstack((numpy.arange(-8.,-1.,1.0),numpy.arange(1.,8.,1.0)))
+    contour_levels_ys = numpy.arange(10,31,1)
+    contour_levels_yc = numpy.hstack((numpy.arange(-1.25,-0.24,0.25),numpy.arange(0.25,1.3,0.25)))
+    contour_levels_zs = numpy.arange(-10,16,2)
+    contour_levels_zc = numpy.hstack((numpy.arange(-5.,-0.5,0.5),numpy.arange(0.5,5.,0.5)))
+    cbar_ticks_xs=[0,2,4,6,8,10,12]
+    plot_states=0
+    clon_y=180.
+    clon_z=310.
+
 # make color map
 minval=0.1 
 maxval=1.0 
@@ -186,18 +174,6 @@ n=256
 full_cmap = mp.get_cmap('gist_earth_r')
 cmap_partial = matplotlib.colors.LinearSegmentedColormap.from_list('trunc({n},{a:.2f},{b:.2f})'.format(n=full_cmap.name, a=minval, b=maxval), full_cmap(numpy.linspace(minval, maxval, n)))
 
-# define a function that forces the middle of a colorbar to be at zero, even when asymmetric max/min
-class MidpointNormalize(matplotlib.colors.Normalize):
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-        self.midpoint = midpoint
-        matplotlib.colors.Normalize.__init__(self, vmin, vmax, clip)
-    def __call__(self, value, clip=None):
-        # I'm ignoring masked values and all kinds of edge cases to make a
-        # simple example...
-        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-        return numpy.ma.masked_array(numpy.interp(value, x, y))
-
-
 # In[18]:
 fontsize=12
 agmt_levels=[6,30]
@@ -205,8 +181,7 @@ hatching='..'
 
 fig = mp.figure(figsize=(8,7))
 
-# model subset with minimum RMSE in Precip
-print('------minimum RMSE in Precip')
+##### Model subset with minimum RMSE in variable_x
 min_para=10000000.
 for ipareto in range(length_pareto):
     if min_para >= pareto_set_collect[ipareto,0]: 
@@ -228,49 +203,35 @@ model_data_hist_z = numpy.zeros((npmodels, z_regional_nlat, z_regional_nlon))
 
 for i in range(npmodels):
     modelname = model_names[modelcomb[i]]
-    print("opening model", modelname)
-    # OPEN HISTORICAL FIELDS
     model_data_hist_x[i,:,:] = model_data_hist_x0[modelcomb[i],:,:]
     model_data_hist_y[i,:,:] = model_data_hist_y0[modelcomb[i],:,:]
     model_data_hist_z[i,:,:] = model_data_hist_z0[modelcomb[i],:,:]
 
-############################## starting plot ##############################
 mp.rcParams['axes.linewidth'] = 0.3
-#Precip
+#variable_x
 ax = mp.subplot2grid((32,28),(3,0),colspan=9,rowspan=6, projection=ccrs.PlateCarree())
-ax.text(s='Pareto-optimal set (k=3) with minimum spatial RMSEs for Precip, ' + vlist2 + ', and '+'U'+str(uwind_level),x=0.0,y=1.80,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.6)
-ax.text(s='Min. Precip RMSEs',x=0.5,y=1.55,ha='center',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.45)
+ax.text(s='Pareto-optimal set with minimum spatial RMSEs for '+vlist_label[0]+', '+vlist_label[1]+', and '+vlist_label[2],x=0.0,y=1.80,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.6)
+ax.text(s='Min. '+vlist_label[0]+' RMSEs',x=0.5,y=1.55,ha='center',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.45)
 ax.text(s='('+models+')',x=0.5,y=1.45,ha='center',va='bottom',color='blue',transform=ax.transAxes,fontsize=fontsize*0.35)
-ax.text(s='Precip climatology (shaded) and bias (contours; relative to GPCP) in each model subset',x=0.8,y=1.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.5)
-ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,0])+' mm day$^{-1}$',x=0.63,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+ax.text(s=vlist_label[0]+' climatology (shaded) and bias (contours; relative to GPCP) in each model subset',x=0.8,y=1.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.5)
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,0])+' '+vlist_unit[0],x=0.63,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 lons,lats = numpy.meshgrid(x_regional_lon_vals, x_regional_lat_vals)
-contour_levels = numpy.arange(0,10.,0.25)
-if exp_name=='SAM':
-    contour_levels = numpy.arange(0,11.,0.3)
-if exp_name=='WIO':
-    contour_levels = numpy.arange(0,12.,0.4)
-if exp_name=='CA':
+
+if plot_states==1:
     ax.add_feature(cfeature.STATES.with_scale('50m'), facecolor='none', edgecolor='grey', linewidths=0.5)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
+contour_levels = contour_levels_xs
 cs=ax.contourf(lons, lats, numpy.mean(model_data_hist_x,axis=0), levels=contour_levels, extend='max', cmap=cmap_partial, linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-cbar.set_label('mm day$^{\,-1}$', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[0], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
-cbar.set_ticks([0,1,2,3,4,5,6,7,8,9,10])
-if exp_name=='SAM':
-    cbar.set_ticks([0,2,4,6,8,10,12])
-if exp_name=='WIO':
-    cbar.set_ticks([0,2,4,6,8,10,12])
+cbar.set_ticks(cbar_ticks_xs)
 cbar.solids.set_edgecolor("face")
 cbar.outline.set_linewidth(0.3)
-contour_levels = numpy.hstack((numpy.arange(-4.,-0.5,0.5),numpy.arange(0.5,4.0,0.5)))
-if exp_name=='SAM':
-    contour_levels = numpy.hstack((numpy.arange(-8.,-1.,1.0),numpy.arange(1.,8.,1.0)))
-if exp_name=='WIO':
-    contour_levels = numpy.hstack((numpy.arange(-8.,-1.,1.0),numpy.arange(1.,8.,1.0)))
 mmem_minus_obs = numpy.mean(model_data_hist_x,axis=0)-dict_x['obs_field']
+contour_levels = contour_levels_xc
 ax.contour(lons, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
-ax.text(s='Dashed (solid) contours for negative (positive) values with the zero-line omitted and intervals of '+ str("{:.1f}".format(min(numpy.abs(contour_levels))))+' mm day$^{-1}$.',x=0.0,y=-0.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.35)
+ax.text(s='Dashed (solid) contours for negative (positive) values with the zero-line omitted and intervals of '+ str("{:.1f}".format(min(numpy.abs(contour_levels))))+' '+vlist_unit[0],x=0.0,y=-0.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.35)
 
 for c in cs.collections:
     c.set_edgecolor("face")
@@ -279,45 +240,28 @@ lat_wid=x_lat_hi-x_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(x_lon_lo, x_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# SSTs
-clon=180.
-ax = mp.subplot2grid((32,28),(10,0),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon))
-if vlist[1]=='tos':
-     ax.text(s='SST climatology (shaded) and biases (contours; relative to HADISST) in model subsets',x=0.8,y=1.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.5)
-if vlist[1]=='prw':
-     ax.text(s='PRW climatology (shaded) and biases (contours; relative to ERA-5) in model subsets',x=0.8,y=1.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.5)
-if vlist[1]=='tos':
-   ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+degree_sign+'C',x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
-if vlist[1]=='prw':
-   ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+' mm',x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+# variable_y
+ax = mp.subplot2grid((32,28),(10,0),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon_y))
+ax.text(s=vlist_label[1]+' climatology (shaded) and biases (contours; relative to HADISST) in model subsets',x=0.8,y=1.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.5)
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+vlist_unit[1],x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 masked_sst = numpy.mean(model_data_hist_y,axis=0)
 if vlist[1]=='tos':
    masked_sst[landsea_data>1000000]=numpy.nan
-   contour_levels = numpy.arange(10,31,1)
-if vlist[1]=='prw':
-   contour_levels = numpy.arange(10,55,3)
 lons,lats = numpy.meshgrid(y_regional_lon_vals, y_regional_lat_vals)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-lons1=lons-clon
+lons1=lons-clon_y
+contour_levels = contour_levels_ys
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-if vlist[1]=='tos':
-   cbar.set_label(degree_sign+'C', fontsize=fontsize*0.3)
-if vlist[1]=='prw':
-   cbar.set_label('mm', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[1], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
 cbar.solids.set_edgecolor("face")
 mmem_minus_obs = (numpy.mean(model_data_hist_y,axis=0))-dict_y['obs_field']
 if vlist[1]=='tos':
-   contour_levels = numpy.hstack((numpy.arange(-1.25,-0.24,0.25),numpy.arange(0.25,1.3,0.25)))
    mmem_minus_obs[landsea_data>1000000]=numpy.nan
-   ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
-   ax.text(s='Dashed (solid) contours for negative (positive) values with the zero-line omitted and intervals of '+ str("{:.2f}".format(min(numpy.abs(contour_levels))))+degree_sign+'C.',x=0.0,y=-0.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.35)
-if vlist[1]=='prw':
-   contour_levels = numpy.hstack((numpy.arange(-13.,-0.99,1.0),numpy.arange(1.0,13.0,1.0)))
-   ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
-   ax.text(s='Dashed (solid) contours for negative (positive) values with the zero-line omitted and intervals of '+ str("{:.2f}".format(min(numpy.abs(contour_levels))))+'mm.',x=0.0,y=-0.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.35)
-
+contour_levels = contour_levels_yc
+ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
+ax.text(s='Dashed (solid) contours for negative (positive) values with the zero-line omitted and intervals of '+ str("{:.2f}".format(min(numpy.abs(contour_levels))))+vlist_unit[1],x=0.0,y=-0.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.35)
 
 for c in cs.collections:
     c.set_edgecolor("face")
@@ -326,27 +270,24 @@ lat_wid=y_lat_hi-y_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(y_lon_lo, y_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# WINDS
-lon=180.
-if exp_name=='SAM':
-    clon=310.
-ax = mp.subplot2grid((32,28),(17,0),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon))
-ax.text(s='U'+str(uwind_level)+' climatology (shaded) and bias (contours; relative to ERA-5) in model subsets',x=0.8,y=1.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.5)
-ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,2])+' m s$^{-1}$',x=0.70,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+# variable_z
+ax = mp.subplot2grid((32,28),(17,0),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon_z))
+ax.text(s=vlist_label[2]+' climatology (shaded) and bias (contours; relative to ERA-5) in model subsets',x=0.8,y=1.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.5)
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,2])+' '+vlist_unit[2],x=0.70,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 lons,lats = numpy.meshgrid(z_regional_lon_vals, z_regional_lat_vals)
 mmem = numpy.mean(model_data_hist_z,axis=0)
-contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-lons1=lons-clon
+lons1=lons-clon_z
+contour_levels = contour_levels_zs
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-cbar.set_label('m s$^{-1}$', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[2], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
 cbar.solids.set_edgecolor("face")
-contour_levels = numpy.hstack((numpy.arange(umin2,-uinterval2,uinterval2),numpy.arange(uinterval2,umax2,uinterval2)))
 mmem_minus_obs = numpy.mean(model_data_hist_z,axis=0)-dict_z['obs_field']
+contour_levels = contour_levels_zc
 ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
-ax.text(s='Dashed (solid) contours for negative (positive) values with the zero-line omitted and intervals of '+str("{:.1f}".format(uinterval2))+' m s$^{-1}$.',x=0.0,y=-0.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.35)
+ax.text(s='Dashed (solid) contours for negative (positive) values with the zero-line omitted and intervals of '+str("{:.1f}".format(min(numpy.abs(contour_levels))))+' '+vlist_unit[2],x=0.0,y=-0.15,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.35)
 
 for c in cs.collections:
     c.set_edgecolor("face")
@@ -355,8 +296,7 @@ lat_wid=z_lat_hi-z_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(z_lon_lo, z_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# Model subset with minimum RMSE in SST
-print('------minimum RMSE in SST')
+##### Model subset with minimum RMSE in variable_y
 min_para=10000000.
 for ipareto in range(length_pareto):
     if min_para >= pareto_set_collect[ipareto,1]: 
@@ -378,41 +318,27 @@ model_data_hist_z = numpy.zeros((npmodels, z_regional_nlat, z_regional_nlon))
 
 for i in range(npmodels):
     modelname = model_names[modelcomb[i]]
-    print("opening model", modelname)
     model_data_hist_x[i,:,:] = model_data_hist_x0[modelcomb[i],:,:]
     model_data_hist_y[i,:,:] = model_data_hist_y0[modelcomb[i],:,:]
     model_data_hist_z[i,:,:] = model_data_hist_z0[modelcomb[i],:,:]
 
-############################## two ##############################
 ax = mp.subplot2grid((32,28),(3,9),colspan=9,rowspan=6, projection=ccrs.PlateCarree())
-ax.text(s='Min. SST RMSEs',x=0.5,y=1.55,ha='center',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.45)
+ax.text(s='Min. '+vlist_label[1]+' RMSEs',x=0.5,y=1.55,ha='center',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.45)
 ax.text(s='('+models+')',x=0.5,y=1.45,ha='center',va='bottom',color='blue',transform=ax.transAxes,fontsize=fontsize*0.35)
-ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,0])+' mm day$^{-1}$',x=0.63,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,0])+' '+vlist_unit[0],x=0.63,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 lons,lats = numpy.meshgrid(x_regional_lon_vals, x_regional_lat_vals)
-contour_levels = numpy.arange(0,10.,0.25)
-if exp_name=='SAM':
-    contour_levels = numpy.arange(0,11.,0.3)
-if exp_name=='WIO':
-    contour_levels = numpy.arange(0,12.,0.4)
-if exp_name=='CA':
+if plot_states==1:
     ax.add_feature(cfeature.STATES.with_scale('50m'), facecolor='none', edgecolor='grey', linewidths=0.5)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
+contour_levels = contour_levels_xs
 cs=ax.contourf(lons, lats, numpy.mean(model_data_hist_x,axis=0), levels=contour_levels, extend='max', cmap=cmap_partial, linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-cbar.set_label('mm day$^{\,-1}$', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[0], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
-cbar.set_ticks([0,1,2,3,4,5,6,7,8,9,10])
-if exp_name=='SAM':
-    cbar.set_ticks([0,1,2,3,4,5,6,7,8,9,10,11])
-if exp_name=='WIO':
-    cbar.set_ticks([0,2,4,6,8,10,12])
+cbar.set_ticks(cbar_ticks_xs)
 cbar.solids.set_edgecolor("face")
 cbar.outline.set_linewidth(0.3)
-contour_levels = numpy.hstack((numpy.arange(-4.,-0.5,0.5),numpy.arange(0.5,4.0,0.5)))
-if exp_name=='SAM':
-    contour_levels = numpy.hstack((numpy.arange(-8.,-1.,1.0),numpy.arange(1.,8.,1.0)))
-if exp_name=='WIO':
-    contour_levels = numpy.hstack((numpy.arange(-8.,-1.,1.0),numpy.arange(1.,8.,1.0)))
+contour_levels = contour_levels_xc
 mmem_minus_obs = numpy.mean(model_data_hist_x,axis=0)-dict_x['obs_field']
 ax.contour(lons, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
 
@@ -423,38 +349,26 @@ lat_wid=x_lat_hi-x_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(x_lon_lo, x_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# SSTs
-clon=180.
-ax = mp.subplot2grid((32,28),(10,9),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon))
-if vlist[1]=='tos':
-   ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+degree_sign+'C',x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
-if vlist[1]=='prw':
-   ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+' mm',x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+# variable_y
+ax = mp.subplot2grid((32,28),(10,9),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon_y))
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+vlist_unit[1],x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 masked_sst = numpy.mean(model_data_hist_y,axis=0)
 if vlist[1]=='tos':
    masked_sst[landsea_data>1000000]=numpy.nan
-   contour_levels = numpy.arange(10,31,1)
-if vlist[1]=='prw':
-   contour_levels = numpy.arange(10,55,3)
 lons,lats = numpy.meshgrid(y_regional_lon_vals, y_regional_lat_vals)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-lons1=lons-clon
+lons1=lons-clon_y
+contour_levels = contour_levels_ys
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-if vlist[1]=='tos':
-   cbar.set_label(degree_sign+'C', fontsize=fontsize*0.3)
-if vlist[1]=='prw':
-   cbar.set_label('mm', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[1], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
 cbar.solids.set_edgecolor("face")
 mmem_minus_obs = (numpy.mean(model_data_hist_y,axis=0))-dict_y['obs_field']
 if vlist[1]=='tos':
-   contour_levels = numpy.hstack((numpy.arange(-1.25,-0.24,0.25),numpy.arange(0.25,1.3,0.25)))
    mmem_minus_obs[landsea_data>1000000]=numpy.nan
-   ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
-if vlist[1]=='prw':
-   contour_levels = numpy.hstack((numpy.arange(-13.,-0.99,1.0),numpy.arange(1.0,13.0,1.0)))
-   ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
+contour_levels = contour_levels_yc
+ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
 
 for c in cs.collections:
     c.set_edgecolor("face")
@@ -463,23 +377,20 @@ lat_wid=y_lat_hi-y_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(y_lon_lo, y_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# WINDS
-clon=180.
-if exp_name=='SAM':
-    clon=310.
-ax = mp.subplot2grid((32,28),(17,9),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon))
-ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,2])+' m s$^{-1}$',x=0.70,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+# variable_z
+ax = mp.subplot2grid((32,28),(17,9),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon_z))
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,2])+' '+vlist_unit[2],x=0.70,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 lons,lats = numpy.meshgrid(z_regional_lon_vals, z_regional_lat_vals)
-mmem = numpy.mean(model_data_hist_z,axis=0)
-contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-lons1=lons-clon
+lons1=lons-clon_z
+mmem = numpy.mean(model_data_hist_z,axis=0)
+contour_levels = contour_levels_zs
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-cbar.set_label('m s$^{-1}$', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[2], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
 cbar.solids.set_edgecolor("face")
-contour_levels = numpy.hstack((numpy.arange(umin2,-uinterval2,uinterval2),numpy.arange(uinterval2,umax2,uinterval2)))
+contour_levels = contour_levels_zc
 mmem_minus_obs = numpy.mean(model_data_hist_z,axis=0)-dict_z['obs_field']
 ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
 
@@ -490,8 +401,7 @@ lat_wid=z_lat_hi-z_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(z_lon_lo, z_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# Model subset with minimum RMSE in UWIND
-print('Model subset with minimum RMSE in UWIND')
+## Model subset with minimum RMSE in variable_z
 min_para=10000000.
 for ipareto in range(length_pareto):
     if min_para >= pareto_set_collect[ipareto,2]: 
@@ -513,42 +423,29 @@ model_data_hist_z = numpy.zeros((npmodels, z_regional_nlat, z_regional_nlon))
 
 for i in range(npmodels):
     modelname = model_names[modelcomb[i]]
-    print("opening model", modelname)
     model_data_hist_x[i,:,:] = model_data_hist_x0[modelcomb[i],:,:]
     model_data_hist_y[i,:,:] = model_data_hist_y0[modelcomb[i],:,:]
     model_data_hist_z[i,:,:] = model_data_hist_z0[modelcomb[i],:,:]
 
-############################## three ##############################
+# variable_x
 ax = mp.subplot2grid((32,28),(3,18),colspan=9,rowspan=6, projection=ccrs.PlateCarree())
-ax.text(s='Min. '+'U'+str(uwind_level)+' RMSEs',x=0.5,y=1.55,ha='center',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.45)
+ax.text(s='Min. '+vlist_label[2]+' RMSEs',x=0.5,y=1.55,ha='center',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.45)
 ax.text(s='('+models+')',x=0.5,y=1.45,ha='center',va='bottom',color='blue',transform=ax.transAxes,fontsize=fontsize*0.35)
-ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,0])+' mm day$^{-1}$',x=0.63,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,0])+' '+vlist_unit[0],x=0.63,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 lons,lats = numpy.meshgrid(x_regional_lon_vals, x_regional_lat_vals)
-contour_levels = numpy.arange(0,10.,0.25)
-if exp_name=='SAM':
-    contour_levels = numpy.arange(0,11.,0.3)
-if exp_name=='WIO':
-    contour_levels = numpy.arange(0,12.,0.4)
-if exp_name=='CA':
+if plot_states==1:
     ax.add_feature(cfeature.STATES.with_scale('50m'), facecolor='none', edgecolor='grey', linewidths=0.5)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
+contour_levels = contour_levels_xs
 cs=ax.contourf(lons, lats, numpy.mean(model_data_hist_x,axis=0), levels=contour_levels, extend='max', cmap=cmap_partial, linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-cbar.set_label('mm day$^{\,-1}$', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[0], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
-cbar.set_ticks([0,1,2,3,4,5,6,7,8,9,10])
-if exp_name=='SAM':
-    cbar.set_ticks([0,1,2,3,4,5,6,7,8,9,10,11])
-if exp_name=='WIO':
-    cbar.set_ticks([0,2,4,6,8,10,12])
+cbar.set_ticks(cbar_ticks_xs)
 cbar.solids.set_edgecolor("face")
 cbar.outline.set_linewidth(0.3)
-contour_levels = numpy.hstack((numpy.arange(-4.,-0.5,0.5),numpy.arange(0.5,4.0,0.5)))
-if exp_name=='SAM':
-    contour_levels = numpy.hstack((numpy.arange(-8.,-1.,1.0),numpy.arange(1.,8.,1.0)))
-if exp_name=='WIO':
-    contour_levels = numpy.hstack((numpy.arange(-8.,-1.,1.0),numpy.arange(1.,8.,1.0)))
 mmem_minus_obs = numpy.mean(model_data_hist_x,axis=0)-dict_x['obs_field']
+contour_levels = contour_levels_xc
 ax.contour(lons, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
 
 for c in cs.collections:
@@ -558,39 +455,27 @@ lat_wid=x_lat_hi-x_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(x_lon_lo, x_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# SSTs
-clon=180.
-ax = mp.subplot2grid((32,28),(10,18),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon))
-if vlist[1]=='tos':
-   ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+degree_sign+'C',x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
-if vlist[1]=='prw':
-   ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+' mm',x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+# variable_y
+ax = mp.subplot2grid((32,28),(10,18),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon_y))
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,1])+vlist_unit[1],x=0.72,y=1.005,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 masked_sst = numpy.mean(model_data_hist_y,axis=0)
 if vlist[1]=='tos':
    masked_sst[landsea_data>1000000]=numpy.nan
-   contour_levels = numpy.arange(10,31,1)
-if vlist[1]=='prw':
-   contour_levels = numpy.arange(10,55,3)
 lons,lats = numpy.meshgrid(y_regional_lon_vals, y_regional_lat_vals)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-lons1=lons-clon
+lons1=lons-clon_y
+contour_levels = contour_levels_ys
 cs=ax.contourf(lons1, lats, masked_sst, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-if vlist[1]=='tos':
-   cbar.set_label(degree_sign+'C', fontsize=fontsize*0.3)
-if vlist[1]=='prw':
-   cbar.set_label('mm', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[1], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
 cbar.solids.set_edgecolor("face")
 cbar.outline.set_linewidth(0.3)
 mmem_minus_obs = (numpy.mean(model_data_hist_y,axis=0))-dict_y['obs_field']
 if vlist[1]=='tos':
-   contour_levels = numpy.hstack((numpy.arange(-1.25,-0.24,0.25),numpy.arange(0.25,1.3,0.25)))
    mmem_minus_obs[landsea_data>1000000]=numpy.nan
-   ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
-if vlist[1]=='prw':
-   contour_levels = numpy.hstack((numpy.arange(-13.,-0.99,1.0),numpy.arange(1.0,13.0,1.0)))
-   ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
+contour_levels = contour_levels_yc
+ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
 
 for c in cs.collections:
     c.set_edgecolor("face")
@@ -599,24 +484,21 @@ lat_wid=y_lat_hi-y_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(y_lon_lo, y_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-# WINDS
-clon=180.
-if exp_name=='SAM':
-    clon=310.
-ax = mp.subplot2grid((32,28),(17,18),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon))
-ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,2])+' m s$^{-1}$',x=0.70,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
+# variable_z
+ax = mp.subplot2grid((32,28),(17,18),colspan=9,rowspan=6, projection=ccrs.PlateCarree(central_longitude=clon_z))
+ax.text(s='RMSE: '+ "{:.2f}".format(pareto_set_collect[ipar,2])+' '+vlist[2],x=0.70,y=0.99,ha='left',va='bottom',transform=ax.transAxes,fontsize=fontsize*0.3)
 lons,lats = numpy.meshgrid(z_regional_lon_vals, z_regional_lat_vals)
 mmem = numpy.mean(model_data_hist_z,axis=0)
-contour_levels = numpy.arange(umin1,umax1,uinterval1)
 ax.add_feature(cfeature.COASTLINE, facecolor='none', edgecolor='dimgray', linewidths=0.6)
-lons1=lons-clon
+lons1=lons-clon_z
+contour_levels = contour_levels_zs
 cs=ax.contourf(lons1, lats, mmem, levels=contour_levels, extend='both', cmap='RdYlBu_r', linestyles='none')
 cbar = fig.colorbar(cs, ax=ax, shrink=0.6)
-cbar.set_label('m s$^{-1}$', fontsize=fontsize*0.3)
+cbar.set_label(vlist_unit[2], fontsize=fontsize*0.3)
 cbar.ax.tick_params(width=0.3,length=2.0,labelsize=fontsize*0.3)
 cbar.solids.set_edgecolor("face")
-contour_levels = numpy.hstack((numpy.arange(umin2,-uinterval2,uinterval2),numpy.arange(uinterval2,umax2,uinterval2)))
 mmem_minus_obs = numpy.mean(model_data_hist_z,axis=0)-dict_z['obs_field']
+contour_levels = contour_levels_zc
 ax.contour(lons1, lats, mmem_minus_obs, levels=contour_levels, colors='black', linewidths=0.3, linestyles=['--']*sum(contour_levels<0)+['-']*sum(contour_levels>0))
 
 for c in cs.collections:
@@ -626,10 +508,10 @@ lat_wid=z_lat_hi-z_lat_lo
 rec = mpatches.Rectangle(ax.projection.transform_point(z_lon_lo, z_lat_lo,ccrs.PlateCarree()), lon_wid, lat_wid, facecolor="none", edgecolor='black', linewidth=1, linestyle='-',zorder=2)
 ax.add_patch(rec)
 
-ax.text(s='Left column: Climatological winter mean Precip (upper), ' + vlist2 + ' (middle), U'+str(uwind_level)+' (lower) panels in the model subset with minimum spatial RMSEs of Precip.',x=-2.54,y=-0.3,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
-ax.text(s='Middle column: Same as the left column but for the model subset with minimum spatial RMSEs of ' + vlist2 + '.',x=-2.54,y=-0.4,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
-ax.text(s='Right column: Same as the left column but for the model subset with minimum spatial RMSEs of U'+str(uwind_level)+'.',x=-2.54,y=-0.5,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
-ax.text(s='These model subsets corresponding to minimum RMSEs in Precip, ' + vlist2 + ', and U'+str(uwind_level)+' are identified by the 3D Pareto-optimal analysis.',x=-2.54,y=-0.6,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
+ax.text(s='Left column: Climatological winter mean '+vlist_label[0]+' (upper), ' + vlist_label[1] + ' (middle), '+vlist_label[2]+' (lower) panels in the model subset with minimum spatial RMSEs of '+vlist_label[0]+'.',x=-2.54,y=-0.3,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
+ax.text(s='Middle column: Same as the left column but for the model subset with minimum spatial RMSEs of ' + vlist_label[1]+'.',x=-2.54,y=-0.4,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
+ax.text(s='Right column: Same as the left column but for the model subset with minimum spatial RMSEs of '+vlist_label[2]+'.',x=-2.54,y=-0.5,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
+ax.text(s='These model subsets corresponding to minimum RMSEs in '+vlist_label[0]+', ' + vlist_label[1] + ', and ' + vlist_label[2]+ ' are identified by the 3D Pareto-optimal analysis.',x=-2.54,y=-0.6,ha='left',va='bottom',color='dimgray',transform=ax.transAxes,fontsize=fontsize*0.4)
 
 fig.savefig(os.environ["WK_DIR"]+"/model/PS/"+'spatial_patterns_with_minimum_rmse_in_pareto_front.pdf', transparent=True, bbox_inches='tight', dpi=1200)
 

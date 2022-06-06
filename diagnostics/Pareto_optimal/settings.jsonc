@@ -22,7 +22,7 @@
     "lon": {"standard_name": "longitude"},
     "plev": {
       "standard_name": "air_pressure",
-      "units": "Pa",
+      "units": "hPa",
       "positive": "down",
       "axis": "Z"
     },
@@ -34,11 +34,6 @@
       "units": "kg m-2 s-1",
       "dimensions": ["time", "lat", "lon"]
     },
-    "prw": {
-      "standard_name": "atmosphere_mass_content_of_water_vapor",
-      "units": "kg m-2",
-      "dimensions": ["time", "lat", "lon"]
-    },
     "tos": {
       "standard_name": "sea_surface_temperature",
       "units": "degC",
@@ -47,7 +42,8 @@
     "ua": {
       "standard_name": "eastward_wind",
       "units": "m s-1",
-      "dimensions": ["time", "plev", "lat", "lon"]
+      "dimensions": ["time", "lat", "lon"],
+      "scalar_coordinates": {"plev": 200}
     }
   }
 }

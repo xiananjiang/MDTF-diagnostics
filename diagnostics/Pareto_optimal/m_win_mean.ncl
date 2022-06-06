@@ -6,16 +6,13 @@ begin
 
 wk_dir = getenv("WK_DIR")
 pr_file   = getenv("PR_FILE")
-prw_file  = getenv("PRW_FILE")
 tos_file  = getenv("TOS_FILE")
 ua_file   = getenv("UA_FILE")
-plev_name = getenv("plev_coord")
 
-varn = (/"pr","prw","tos","ua"/)
-infile = (/pr_file,prw_file,tos_file,ua_file/)
-nvar = 4
+varn = (/"pr","tos","ua"/)
+infile = (/pr_file,tos_file,ua_file/)
 
-do j=0,3
+do j=0,2
 
 var=varn(j)
 ;print(var)
@@ -27,11 +24,7 @@ v1&time  =  time
 time     = doubletoint(v1&time)
 mon      = time%100
 indi     = ind(mon.ge.12.or.mon.le.2)
-if (var .eq. "pr" .or. var .eq. "tos" .or. var .eq. "prw") then
 v2       = v1(indi,:,:)
-else
-v2       = v1(indi,:,:,:)
-end if
 v3       = dim_avg_n_Wrap(v2,0)
 
 lat=fspan(-88.75,88.75,72)
@@ -48,29 +41,13 @@ if (var .eq. "pr" ) then
 v4 = v4*86400.
 end if
 
-if (var .eq. "pr" .or. var .eq. "tos" .or. var .eq. "prw") then
-
 v3!0    = "lat"
 v3&lat  = lat
 v3!1    = "lon"
 v3&lon  = lon
 
-else
-
-plev=a->$plev_name$
-v3!0    = "plev"
-v3&plev  = plev
-v3!1    = "lat"
-v3&lat  = lat
-v3!2    = "lon"
-v3&lon  = lon
-
-end if
-
 system("rm -f "+wk_dir+"/model/netCDF/model_"+var+"_climatology_djf.nc")
 fout = addfile(wk_dir+"/model/netCDF/model_"+var+"_climatology_djf.nc","c")
-;system("rm -f "+var+".nc")
-;fout = addfile(var+".nc","c")
 fout->$var$    = v4
 if (var .eq. "pr" ) then
 fout->$var$@units="mm day-1"
@@ -82,5 +59,4 @@ delete([/v1,v2,v3,v4,a,time,mon,indi,lat,lon,fout/])
 
 end do
 
-;print_clock("Finishing calmodel data interpolation")
 end
